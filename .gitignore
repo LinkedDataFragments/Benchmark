@@ -1,4 +1,12 @@
 EC-log.log
+
+# Gradle
 .gradle
 build
+
+# Idea
+*.iml
+*.ipr
+*.iws
+out
 

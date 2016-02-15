@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'idea'
 
 group = "org.insight_centre.citybench"
 version = "1.0.0"
