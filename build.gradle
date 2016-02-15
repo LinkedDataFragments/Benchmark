@@ -1,0 +1,48 @@
+apply plugin: 'java'
+
+group = "org.insight_centre.citybench"
+version = "1.0.0"
+sourceCompatibility = "1.8"
+
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+        resources {
+            srcDir 'lib'
+            exclude '**/*.jar'
+            include '**/*.properties'
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.insight_centre.citybench.main.CityBench'
+    }
+}
+
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    manifest {
+        attributes 'Main-Class': 'org.insight_centre.citybench.main.CityBench'
+    }
+}
+
+repositories {
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+dependencies {
+    // TODO: get these dependencies via maven?
+    compile fileTree(dir: 'lib', include: '*.jar')
+    compile fileTree(dir: 'lib/CQELS-lib', include: '*.jar')
+}
+
