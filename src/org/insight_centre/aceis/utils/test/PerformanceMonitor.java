@@ -1,28 +1,19 @@
 package org.insight_centre.aceis.utils.test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.insight_centre.aceis.io.streams.cqels.CQELSResultListener;
+import com.csvreader.CsvWriter;
 import org.insight_centre.aceis.io.streams.cqels.CQELSSensorStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLResultObserver;
 import org.insight_centre.aceis.io.streams.csparql.CSPARQLSensorStream;
-import org.insight_centre.aceis.observations.SensorObservation;
+import org.insight_centre.aceis.rspengine.CsparqlRspEngine;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.csvreader.CsvWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PerformanceMonitor implements Runnable {
 	private Map<String, String> qMap;
@@ -178,7 +169,7 @@ public class PerformanceMonitor implements Runnable {
 	}
 
 	private void cleanup() {
-		if (CityBench.csparqlEngine != null) {
+		if (CsparqlRspEngine.csparqlEngine != null) {
 			// CityBench.csparqlEngine.destroy();
 			for (Object css : CityBench.startedStreamObjects) {
 				((CSPARQLSensorStream) css).stop();

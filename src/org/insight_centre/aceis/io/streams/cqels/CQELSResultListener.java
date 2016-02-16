@@ -1,26 +1,15 @@
 package org.insight_centre.aceis.io.streams.cqels;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.hp.hpl.jena.sparql.core.Var;
 import org.deri.cqels.data.Mapping;
 import org.deri.cqels.engine.ContinuousListener;
+import org.insight_centre.aceis.rspengine.CqelsRspEngine;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hp.hpl.jena.sparql.core.Var;
-
-import eu.larkc.csparql.common.RDFTuple;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CQELSResultListener implements ContinuousListener {
 	private String uri;
@@ -41,7 +30,7 @@ public class CQELSResultListener implements ContinuousListener {
 			for (Iterator<Var> vars = mapping.vars(); vars.hasNext();) {
 				Var var = vars.next();
 				String varName = var.getName();
-				String varStr = CityBench.cqelsContext.engine().decode(mapping.get(var)).toString();
+				String varStr = CqelsRspEngine.cqelsContext.engine().decode(mapping.get(var)).toString();
 				if (varName.contains("obId")) {
 					if (!capturedObIds.contains(varStr)) {
 						capturedObIds.add(varStr);
