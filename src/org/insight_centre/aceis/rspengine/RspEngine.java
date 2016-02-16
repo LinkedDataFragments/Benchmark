@@ -1,11 +1,14 @@
 package org.insight_centre.aceis.rspengine;
 
-import org.insight_centre.aceis.io.EventRepository;
+import org.insight_centre.aceis.eventmodel.EventDeclaration;
+import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,13 +39,21 @@ public abstract class RspEngine {
         return this.queryDirectory;
     }
 
-    abstract public void init(String dataset);
-    abstract public void startStreamsFromQuery(CityBench cityBench, String query) throws Exception;
-    abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
-    abstract public void startTests(CityBench cityBench, Map<String, String> queryMap, int queryDuplicates) throws Exception;
-
     public String transformQuery(String queryId, String query) {
         return query;
+    }
+
+    public void startStreamsFromQuery(CityBench cityBench, String query) throws Exception {
+        List<String> streamNames = cityBench.getStreamFileNamesFromQuery(query);
+        for (String sn : streamNames) {
+            String uri = RDFFileManager.defaultPrefix + sn.split("\\.")[0];
+            String path = cityBench.streams + "/" + sn;
+            if (!cityBench.startedStreams.contains(uri)) {
+                cityBench.startedStreams.add(uri);
+                EventDeclaration ed = cityBench.er.getEds().get(uri);
+                cityBench.startedStreamObjects.add(constructStream(ed.getEventType(), uri, path, ed, cityBench.start, cityBench.end, cityBench.rate, cityBench.frequency));
+            }
+        }
     }
 
     protected void startStreams(CityBench cityBench, Map<String, String> queryMap) throws Exception{
@@ -58,4 +69,10 @@ public abstract class RspEngine {
             registerQuery(cityBench, qid, query);
         }
     }
+
+    abstract public void init(String dataset);
+    abstract public void startTests(CityBench cityBench, Map<String, String> queryMap, int queryDuplicates) throws Exception;
+    abstract public Object constructStream(String type, String uri, String path, EventDeclaration ed, Date start, Date end, double rate, double frequency) throws Exception;
+    abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
+
 }
