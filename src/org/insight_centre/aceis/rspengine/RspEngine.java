@@ -43,8 +43,12 @@ public abstract class RspEngine {
         return query;
     }
 
+    protected List<String> getQueryStreams(CityBench cityBench, String query) throws Exception {
+        return cityBench.getStreamFileNamesFromQuery(query);
+    }
+
     public void startStreamsFromQuery(CityBench cityBench, String query) throws Exception {
-        List<String> streamNames = cityBench.getStreamFileNamesFromQuery(query);
+        List<String> streamNames = getQueryStreams(cityBench, query);
         for (String sn : streamNames) {
             String uri = RDFFileManager.defaultPrefix + sn.split("\\.")[0];
             String path = cityBench.streams + "/" + sn;

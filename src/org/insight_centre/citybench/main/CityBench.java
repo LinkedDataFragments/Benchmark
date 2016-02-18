@@ -1,59 +1,32 @@
 package org.insight_centre.citybench.main;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.EventRepository;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusParkingStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusPollutionStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusTrafficStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusWeatherStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSLocationStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSSensorStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLAarhusPollutionStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLAarhusParkingStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLAarhusTrafficStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLAarhusWeatherStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLLocationStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLSensorStream;
 import org.insight_centre.aceis.observations.SensorObservation;
 import org.insight_centre.aceis.rspengine.CqelsRspEngine;
 import org.insight_centre.aceis.rspengine.CsparqlRspEngine;
 import org.insight_centre.aceis.rspengine.RspEngine;
+import org.insight_centre.aceis.rspengine.TpfQueryStreamerRspEngine;
 import org.insight_centre.aceis.utils.test.PerformanceMonitor;
-//import org.insight_centre.aceis.io.streams.csparql.CSPARQLResultObserver;
 import org.slf4j.Logger;
-//import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hp.hpl.jena.reasoner.ReasonerRegistry;
-
-import eu.larkc.csparql.engine.CsparqlEngineImpl;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CityBench {
 	private static final Map<String, RspEngine> rspEngines = new HashMap<>();
 	static {
 		registerRspEngine(new CqelsRspEngine());
 		registerRspEngine(new CsparqlRspEngine());
+		registerRspEngine(new TpfQueryStreamerRspEngine());
 	}
 
 	static void registerRspEngine(RspEngine rspEngine) {

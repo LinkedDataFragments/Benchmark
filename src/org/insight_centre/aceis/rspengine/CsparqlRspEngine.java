@@ -47,15 +47,15 @@ public class CsparqlRspEngine extends RspEngine {
     @Override
     public Object constructStream(String type, String uri, String path, EventDeclaration ed, Date start, Date end, double rate, double frequency) throws Exception {
         CSPARQLSensorStream css;
-        if (type.equals("traffic")) {
+        if (type.contains("traffic")) {
             css = new CSPARQLAarhusTrafficStream(uri, path, ed, start, end);
-        } else if (type.equals("pollution")) {
+        } else if (type.contains("pollution")) {
             css = new CSPARQLAarhusPollutionStream(uri, path, ed, start, end);
-        } else if (type.equals("weather")) {
+        } else if (type.contains("weather")) {
             css = new CSPARQLAarhusWeatherStream(uri, path, ed, start, end);
-        } else if (type.equals("location"))
+        } else if (type.contains("location"))
             css = new CSPARQLLocationStream(uri, path, ed);
-        else if (type.equals("parking"))
+        else if (type.contains("parking"))
             css = new CSPARQLAarhusParkingStream(uri, path, ed, start, end);
         else
             throw new Exception("Sensor type not supported.");

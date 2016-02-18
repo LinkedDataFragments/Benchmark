@@ -5,7 +5,6 @@ group = "org.insight_centre.citybench"
 version = "1.0.0"
 sourceCompatibility = "1.8"
 
-
 sourceSets {
     main {
         java {
@@ -36,6 +35,7 @@ task fatJar(type: Jar) {
 }
 
 repositories {
+    mavenCentral()
     flatDir {
         dirs 'lib'
     }
@@ -45,5 +45,7 @@ dependencies {
     // TODO: get these dependencies via maven?
     compile fileTree(dir: 'lib', include: '*.jar')
     compile fileTree(dir: 'lib/CQELS-lib', include: '*.jar')
+
+    compile 'org.apache.httpcomponents:httpclient:4.3.4'
 }
 

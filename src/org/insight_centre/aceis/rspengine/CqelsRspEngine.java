@@ -49,15 +49,15 @@ public class CqelsRspEngine extends RspEngine {
         CQELSSensorStream css;
         if (ed == null)
             throw new Exception("ED not found for: " + uri);
-        if (type.equals("traffic")) {
+        if (type.contains("traffic")) {
             css = new CQELSAarhusTrafficStream(cqelsContext, uri, path, ed, start, end);
-        } else if (type.equals("pollution")) {
+        } else if (type.contains("pollution")) {
             css = new CQELSAarhusPollutionStream(cqelsContext, uri, path, ed, start, end);
-        } else if (type.equals("weather")) {
+        } else if (type.contains("weather")) {
             css = new CQELSAarhusWeatherStream(cqelsContext, uri, path, ed, start, end);
-        } else if (type.equals("location"))
+        } else if (type.contains("location"))
             css = new CQELSLocationStream(cqelsContext, uri, path, ed);
-        else if (type.equals("parking"))
+        else if (type.contains("parking"))
             css = new CQELSAarhusParkingStream(cqelsContext, uri, path, ed, start, end);
         else
             throw new Exception("Sensor type not supported: " + ed.getEventType());
