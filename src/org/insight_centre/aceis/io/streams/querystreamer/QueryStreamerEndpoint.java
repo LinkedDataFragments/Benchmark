@@ -20,8 +20,13 @@ import java.util.Queue;
  */
 public class QueryStreamerEndpoint {
 
+    private final int insertPort;
     private final HttpClient httpclient = HttpClients.createDefault();
     private final Queue<String> buffer = new LinkedList<>();
+
+    public QueryStreamerEndpoint(int insertPort) {
+        this.insertPort = insertPort;
+    }
 
     /**
      * Buffer the given triple to the server for insertion.
@@ -59,8 +64,7 @@ public class QueryStreamerEndpoint {
     }
 
     protected String getUrl(long timeInitial, long timeFinal, String streamId) {
-        // TODO: change base uri
-        return String.format("http://localhost:4000/?initial=%s&final=%s&streamId=%s", timeInitial, timeFinal, streamId);
+        return String.format("http://localhost:%s/?initial=%s&final=%s&streamId=%s", insertPort, timeInitial, timeFinal, streamId);
     }
 
     protected void postTriples(String url, String body) throws IOException {
