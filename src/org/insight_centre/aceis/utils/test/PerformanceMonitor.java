@@ -1,9 +1,6 @@
 package org.insight_centre.aceis.utils.test;
 
 import com.csvreader.CsvWriter;
-import org.insight_centre.aceis.io.streams.cqels.CQELSSensorStream;
-import org.insight_centre.aceis.io.streams.csparql.CSPARQLSensorStream;
-import org.insight_centre.aceis.rspengine.CsparqlRspEngine;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +25,12 @@ public class PerformanceMonitor implements Runnable {
 	private long resultInitTime = 0, lastCheckPoint = 0, globalInit = 0;
 	private boolean stop = false;
 	private List<String> qList;
+	private final CityBench cityBench;
 	private static final Logger logger = LoggerFactory.getLogger(PerformanceMonitor.class);
 
-	public PerformanceMonitor(Map<String, String> queryMap, long duration, int duplicates, String resultName)
+	public PerformanceMonitor(Map<String, String> queryMap, long duration, int duplicates, String resultName, CityBench cityBench)
 			throws Exception {
+		this.cityBench = cityBench;
 		qMap = queryMap;
 		this.duration = duration;
 		this.resultName = resultName;
@@ -169,20 +168,9 @@ public class PerformanceMonitor implements Runnable {
 	}
 
 	private void cleanup() {
-		if (CsparqlRspEngine.csparqlEngine != null) {
-			// CityBench.csparqlEngine.destroy();
-			for (Object css : CityBench.startedStreamObjects) {
-				((CSPARQLSensorStream) css).stop();
-			}
-		} else {
-			// CityBench.cqelsContext.engine().
-			for (Object css : CityBench.startedStreamObjects) {
-				((CQELSSensorStream) css).stop();
-			}
-		}
+		cityBench.engine.destroy(cityBench);
 		this.stop = true;
 		System.gc();
-
 	}
 
 	public boolean isStop() {

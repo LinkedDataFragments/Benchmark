@@ -69,7 +69,7 @@ public class CityBench {
 
 	public String dataset, ontology, streams;
 	public long duration = 0; // experiment time in milliseconds
-	private RspEngine engine;
+	public final RspEngine engine;
 	public EventRepository er;
 	public double frequency = 1.0;
 	public static PerformanceMonitor pm;
@@ -278,7 +278,7 @@ public class CityBench {
 	protected void startTest() throws Exception {
 		// load queries from query directory, each file contains 1 query
 		this.loadQueries();
-		pm = new PerformanceMonitor(queryMap, duration, queryDuplicates, resultName);
+		pm = new PerformanceMonitor(queryMap, duration, queryDuplicates, resultName, this);
 		new Thread(pm).start();
 		this.engine.startTests(this, queryMap, queryDuplicates);
 

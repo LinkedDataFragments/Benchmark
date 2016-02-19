@@ -78,5 +78,6 @@ public abstract class RspEngine {
     abstract public void startTests(CityBench cityBench, Map<String, String> queryMap, int queryDuplicates) throws Exception;
     abstract public Object constructStream(String type, String uri, String path, EventDeclaration ed, Date start, Date end, double rate, double frequency) throws Exception;
     abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
+    abstract public void destroy(CityBench cityBench);
 
 }

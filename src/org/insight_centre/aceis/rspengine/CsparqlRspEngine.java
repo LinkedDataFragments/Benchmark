@@ -84,4 +84,12 @@ public class CsparqlRspEngine extends RspEngine {
             cityBench.registeredQueries.put(qid, cro);
         }
     }
+
+    @Override
+    public void destroy(CityBench cityBench) {
+        // CityBench.csparqlEngine.destroy();
+        for (Object css : CityBench.startedStreamObjects) {
+            ((CSPARQLSensorStream) css).stop();
+        }
+    }
 }

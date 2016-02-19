@@ -3,7 +3,6 @@ package org.insight_centre.aceis.rspengine;
 import com.hp.hpl.jena.reasoner.ReasonerRegistry;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
-import org.insight_centre.aceis.io.streams.cqels.*;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerAarhusTrafficStream;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerEndpoint;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerSensorStream;
@@ -83,5 +82,13 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException {
         // TODO: start a query streamer process for the given query
+    }
+
+    @Override
+    public void destroy(CityBench cityBench) {
+        // TODO: stop server
+        for (Object css : CityBench.startedStreamObjects) {
+            ((QueryStreamerSensorStream) css).stop();
+        }
     }
 }
