@@ -8,7 +8,9 @@ import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.reasoner.ReasonerRegistry;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
+import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusWeatherStream;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerAarhusTrafficStream;
+import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerAarhusWeatherStream;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerEndpoint;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerSensorStream;
 import org.insight_centre.aceis.observations.SensorObservation;
@@ -148,12 +150,13 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             qss = new QueryStreamerAarhusTrafficStream(endpoint, uri, path, ed, start, end);
         }/* else if (type.contains("pollution")) {
             css = new CQELSAarhusPollutionStream(cqelsContext, uri, path, ed, start, end);
-        } else if (type.contains("weather")) {
-            css = new CQELSAarhusWeatherStream(cqelsContext, uri, path, ed, start, end);
-        } else if (type.contains("location"))
+        }*/ else if (type.contains("weather")) {
+            qss = new QueryStreamerAarhusWeatherStream(endpoint, uri, path, ed, start, end);
+        /*} else if (type.contains("location")) {
             css = new CQELSLocationStream(cqelsContext, uri, path, ed);
-        else if (type.contains("parking"))
+        } else if (type.contains("parking")) {
             css = new CQELSAarhusParkingStream(cqelsContext, uri, path, ed, start, end);*/
+        }
         else
             throw new Exception("Sensor type not supported: " + ed.getEventType());
         qss.setRate(rate);

@@ -1,12 +1,15 @@
 package org.insight_centre.aceis.io.streams.querystreamer;
 
 import com.hp.hpl.jena.rdf.model.Statement;
+import org.insight_centre.aceis.observations.AarhusTrafficObservation;
 import org.insight_centre.aceis.observations.SensorObservation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public abstract class QueryStreamerSensorStream implements Runnable {
@@ -72,6 +75,26 @@ public abstract class QueryStreamerSensorStream implements Runnable {
     public QueryStreamerEndpoint getEndpoint() {
         return endpoint;
     }
+
+	protected void handleStatements(List<IdentifiableStatement> statements) {
+		long timeInitial = System.currentTimeMillis();
+		long timeFinal = System.currentTimeMillis() + sleep;
+		for (IdentifiableStatement is : statements) {
+			for (Statement st : is.statements) {
+				getEndpoint().stream(st.getSubject(), st.getPredicate(), st.getObject());
+			}
+			getEndpoint().flush(timeInitial, timeFinal, is.id);
+		}
+		if (sleep > 0) {
+			try {
+				if (this.getRate() == 1.0)
+					Thread.sleep(sleep);
+			} catch (InterruptedException e) {
+
+				e.printStackTrace();
+			}
+		}
+	}
 
     public static class IdentifiableStatement {
 

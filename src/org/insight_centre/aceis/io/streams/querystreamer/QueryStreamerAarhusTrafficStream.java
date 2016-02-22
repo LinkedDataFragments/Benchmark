@@ -22,8 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-//import com.hp.hpl.jena.graph.Node;
-
 public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream {
 	private static final Logger logger = LoggerFactory.getLogger(QueryStreamerAarhusTrafficStream.class);
 	EventDeclaration ed;
@@ -122,7 +120,6 @@ public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream 
 		try {
 			// Reads csv document for traffic metadata
 			boolean completed = false;
-			int cnt = 0;
 			while (streamData.readRecord() && !stop) {
 				Date obTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(streamData.get("TIMESTAMP"));
 				logger.debug("Reading data: " + streamData.toString());
@@ -134,43 +131,17 @@ public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream 
 				}
 				AarhusTrafficObservation data = (AarhusTrafficObservation) this.createObservation(streamData);
 				List<IdentifiableStatement> stmts = this.getStatements(data);
-				long messageByte = 0;
-				cnt += 1;
-				// uncomment for testing the completeness, i.e., restrict the observations produced
-				// if (cnt >= 2)
-				// completed = true;
 				try {
 					if (completed) {
 						logger.info("My mission completed: " + this.getUri());
 						Thread.sleep(sleep);
 						continue;
 					}
-
 				} catch (InterruptedException e) {
-
 					e.printStackTrace();
 
 				}
-				long timeInitial = System.currentTimeMillis();
-				long timeFinal = System.currentTimeMillis() + sleep;
-				for (IdentifiableStatement is : stmts) {
-					for (Statement st : is.statements) {
-						getEndpoint().stream(st.getSubject(), st.getPredicate(), st.getObject());
-						// logger.info(this.getURI() + " Streaming: " + st.toString());
-						messageByte += st.toString().getBytes().length;
-					}
-					getEndpoint().flush(timeInitial, timeFinal, is.id);
-				}
-				if (sleep > 0) {
-					try {
-						if (this.getRate() == 1.0)
-							Thread.sleep(sleep);
-					} catch (InterruptedException e) {
-
-						e.printStackTrace();
-
-					}
-				}
+				handleStatements(stmts);
 			}
 		} catch (Exception e) {
 
