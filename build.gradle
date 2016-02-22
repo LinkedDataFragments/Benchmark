@@ -48,5 +48,6 @@ dependencies {
 
     compile 'org.apache.httpcomponents:httpclient:4.3.4'
     compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.code.gson:gson:2.6.1'
 }
 

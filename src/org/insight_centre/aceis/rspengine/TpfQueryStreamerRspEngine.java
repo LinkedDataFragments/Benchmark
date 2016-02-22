@@ -1,6 +1,8 @@
 package org.insight_centre.aceis.rspengine;
 
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.reasoner.ReasonerRegistry;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
@@ -8,13 +10,13 @@ import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerAarhusTrafficStream;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerEndpoint;
 import org.insight_centre.aceis.io.streams.querystreamer.QueryStreamerSensorStream;
+import org.insight_centre.aceis.observations.SensorObservation;
 import org.insight_centre.citybench.main.CityBench;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RSP engine declaration for the TPF Query Streamer
@@ -37,6 +39,9 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     private String type = "graphs";
     private boolean interval = false;
     private boolean caching = false;
+
+    public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
+    public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -158,10 +163,10 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder("node", "queryenv", type);
+            ProcessBuilder processBuilder = new ProcessBuilder("node", "querymeta", type);
             processBuilder.directory(new File(tpfStreamingExec + "bin/"));
             if(debug) {
-                processBuilder.inheritIO();
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             }
 
             Map<String, String> env = Maps.newHashMap();
@@ -172,6 +177,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
             processBuilder.environment().putAll(env);
             Process queryProcess = processBuilder.start();
+            new Thread(new ResultObserver(queryProcess, qid)).start();
 
             cityBench.registeredQueries.put(qid, queryProcess);
         } catch (IOException e) {
@@ -195,4 +201,62 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         serverProcess.destroyForcibly();
         proxyProcess.destroyForcibly();
     }
+
+    public static class ResultObserver implements Runnable {
+
+        private final Process queryProcess;
+        private final String qid;
+
+        public ResultObserver(Process queryProcess, String qid) {
+            this.queryProcess = queryProcess;
+            this.qid = qid;
+        }
+
+        @Override
+        public void run() {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(queryProcess.getInputStream()));
+            String result;
+            try {
+                while ((result = reader.readLine()) != null) {
+                    if(result.contains("$RESULT=")) {
+                        Map<String, Long> latencies = Maps.newHashMap();
+                        Map<String, String> data = new Gson().fromJson(result.substring("$RESULT=".length()), new TypeToken<Map<String, String>>(){}.getType());
+                        for(Map.Entry<String, String> entry : data.entrySet()) {
+                            String obid = entry.getValue();
+                            if (obid == null)
+                                logger.error("NULL ob Id detected.");
+                            if(CityBench.obMap.containsKey(obid)) {
+                                if (!capturedObIds.contains(obid)) {
+                                    capturedObIds.add(obid);
+                                    try {
+                                        SensorObservation so = CityBench.obMap.get(obid);
+                                        if (so == null)
+                                            logger.error("Cannot find observation for: " + obid);
+                                        long creationTime = so.getSysTimestamp().getTime();
+                                        latencies.put(obid, (System.currentTimeMillis() - creationTime));
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+
+                        if(!latencies.isEmpty()) {
+                            if (!capturedResults.contains(result)) {
+                                capturedResults.add(result);
+                                CityBench.pm.addResults(qid, latencies, 1);
+                            } else {
+                                logger.debug("Query Streamer result discarded: " + result);
+                            }
+                        }
+                    } else {
+                        System.out.println(result);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
