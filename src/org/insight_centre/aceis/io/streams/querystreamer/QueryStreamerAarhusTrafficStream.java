@@ -129,7 +129,7 @@ public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream 
 						continue;
 					}
 				}
-				AarhusTrafficObservation data = (AarhusTrafficObservation) this.createObservation(streamData);
+				SensorObservation data = this.createObservation(streamData);
 				List<IdentifiableStatement> stmts = this.getStatements(data);
 				try {
 					if (completed) {

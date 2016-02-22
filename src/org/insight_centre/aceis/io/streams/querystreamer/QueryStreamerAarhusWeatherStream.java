@@ -109,7 +109,7 @@ public class QueryStreamerAarhusWeatherStream extends QueryStreamerSensorStream 
 						continue;
 					}
 				}
-				WeatherObservation data = (WeatherObservation) this.createObservation(streamData);
+				SensorObservation data = this.createObservation(streamData);
 				List<IdentifiableStatement> stmts = this.getStatements(data);
 				try {
 					if (completed) {
