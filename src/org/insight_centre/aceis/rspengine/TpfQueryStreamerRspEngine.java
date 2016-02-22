@@ -1,5 +1,6 @@
 package org.insight_centre.aceis.rspengine;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -16,7 +17,6 @@ import org.insight_centre.citybench.main.CityBench;
 import java.io.*;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RSP engine declaration for the TPF Query Streamer
@@ -123,10 +123,12 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     protected List<String> getQueryStreams(CityBench cityBench, String query) throws Exception {
-        // TODO: abstract as multimap query->streams
-        List<String> streams = new LinkedList<>();
-        streams.add("AarhusTrafficData182955.stream");
-        streams.add("AarhusTrafficData158505.stream");
+        List<String> streams = Lists.newLinkedList();
+        for (String line : query.split("\\n")) {
+            if (line.length() > 0 && line.charAt(0) == '#') {
+                streams.add(line.substring(1));
+            }
+        }
         return streams;
     }
 

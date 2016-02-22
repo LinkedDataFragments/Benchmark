@@ -1,3 +1,5 @@
+#AarhusTrafficData182955.stream
+#AarhusTrafficData158505.stream
 select ?obId1 ?obId2 ?v1 ?v2
 where {
 
