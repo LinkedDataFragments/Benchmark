@@ -1,6 +1,7 @@
 package org.insight_centre.aceis.io.streams.querystreamer;
 
 import com.csvreader.CsvReader;
+import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.RDF;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
@@ -83,8 +84,9 @@ public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream 
 
 	@Override
 	protected List<IdentifiableStatement> getStatements(SensorObservation data) throws NumberFormatException, IOException {
-		List<IdentifiableStatement> statements = new LinkedList<>();
-		if (ed != null)
+		List<IdentifiableStatement> identifiableStatements = new LinkedList<>();
+		if (ed != null) {
+			List<Statement> statements = Lists.newLinkedList();
 			for (String pStr : ed.getPayloads()) {
 				Model m = ModelFactory.createDefaultModel();
 				String obId = data.getObId();
@@ -108,9 +110,11 @@ public class QueryStreamerAarhusTrafficStream extends QueryStreamerSensorStream 
 					observation.addLiteral(hasValue, ((AarhusTrafficObservation) data).getEstimatedTime());
 				else if (pStr.contains("CongestionLevel"))
 					observation.addLiteral(hasValue, ((AarhusTrafficObservation) data).getCongestionLevel());
-				statements.add(new IdentifiableStatement(ed.getServiceId().split("#")[1], m.listStatements().toList()));
+				statements.addAll(m.listStatements().toList());
 			}
-		return statements;
+			identifiableStatements.add(new IdentifiableStatement(ed.getServiceId().split("#")[1], statements));
+		}
+		return identifiableStatements;
 	}
 
 	public void run() {

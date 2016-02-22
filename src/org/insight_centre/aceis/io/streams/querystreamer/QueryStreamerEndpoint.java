@@ -1,7 +1,10 @@
 package org.insight_centre.aceis.io.streams.querystreamer;
 
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -11,6 +14,7 @@ import org.apache.http.impl.client.HttpClients;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -84,4 +88,13 @@ public class QueryStreamerEndpoint {
         }
     }
 
+    public void insertStaticData(Dataset dataset) {
+        Model model = dataset.getDefaultModel();
+        Iterator<Statement> it = model.listStatements();
+        while(it.hasNext()) {
+            Statement stmnt = it.next();
+            stream(stmnt.getSubject(), stmnt.getPredicate(), stmnt.getObject());
+        }
+        flush(-1, -1, "STATIC");
+    }
 }

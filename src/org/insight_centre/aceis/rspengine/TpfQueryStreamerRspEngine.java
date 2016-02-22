@@ -1,6 +1,7 @@
 package org.insight_centre.aceis.rspengine;
 
 import com.google.common.collect.Maps;
+import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.reasoner.ReasonerRegistry;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
@@ -35,6 +36,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     private boolean debug = true;
     private String type = "graphs";
     private boolean interval = false;
+    private boolean caching = false;
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -58,6 +60,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         debug = Boolean.parseBoolean(prop.getProperty("debug"));
         type = prop.getProperty("type");
         interval = Boolean.parseBoolean(prop.getProperty("interval"));
+        caching = Boolean.parseBoolean(prop.getProperty("caching"));
 
         // Start the actual LDF server
         startLdfServer();
@@ -67,7 +70,8 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
         // initialize datasets
         try {
-            RDFFileManager.initializeCSPARQLContext(dataset, ReasonerRegistry.getRDFSReasoner());
+            Dataset d = RDFFileManager.initializeCSPARQLContext(dataset, ReasonerRegistry.getRDFSReasoner());
+            endpoint.insertStaticData(d);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
@@ -153,11 +157,35 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException {
-        // TODO: start a query streamer process for the given query
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("node", "queryenv", type);
+            processBuilder.directory(new File(tpfStreamingExec + "bin/"));
+            if(debug) {
+                processBuilder.inheritIO();
+            }
+
+            Map<String, String> env = Maps.newHashMap();
+            if(debug) env.put("DEBUG", "true");
+            env.put("QUERY", query);
+            env.put("CACHING", Boolean.toString(caching));
+            env.put("TARGET", target);
+
+            processBuilder.environment().putAll(env);
+            Process queryProcess = processBuilder.start();
+
+            cityBench.registeredQueries.put(qid, queryProcess);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void destroy(CityBench cityBench) {
+        // Stop queries
+        for(Object q : cityBench.registeredQueries.values()) {
+            ((Process) q).destroyForcibly();
+        }
+
         // Stop streams
         for (Object css : CityBench.startedStreamObjects) {
             ((QueryStreamerSensorStream) css).stop();
