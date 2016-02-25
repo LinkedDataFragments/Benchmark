@@ -5,12 +5,12 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.DatasetFactory;
+import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.reasoner.ReasonerRegistry;
+import com.hp.hpl.jena.util.FileManager;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusParkingStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSAarhusWeatherStream;
-import org.insight_centre.aceis.io.streams.cqels.CQELSLocationStream;
 import org.insight_centre.aceis.io.streams.querystreamer.*;
 import org.insight_centre.aceis.observations.SensorObservation;
 import org.insight_centre.citybench.main.CityBench;
@@ -76,8 +76,17 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
         // initialize datasets
         try {
-            Dataset d = RDFFileManager.initializeCSPARQLContext(dataset, ReasonerRegistry.getRDFSReasoner());
-            endpoint.insertStaticData(d);
+            Model defaultModel = FileManager.get().loadModel(RDFFileManager.datasetDirectory + dataset);
+            Model ces = FileManager.get().loadModel(RDFFileManager.ontologyDirectory + "ces.n3");
+            Model culturalevents = FileManager.get().loadModel(RDFFileManager.datasetDirectory + "AarhusCulturalEvents.n3");
+            Model libraryevents = FileManager.get().loadModel(RDFFileManager.datasetDirectory + "AarhusLibraryEvents.n3");
+
+            RDFFileManager.dataset = DatasetFactory.create(defaultModel);
+            RDFFileManager.dataset.addNamedModel(RDFFileManager.cesPrefix, ces);
+            RDFFileManager.dataset.addNamedModel("culturalevents", culturalevents);
+            RDFFileManager.dataset.addNamedModel("libraryevents", libraryevents);
+
+            endpoint.insertStaticData(RDFFileManager.dataset);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);

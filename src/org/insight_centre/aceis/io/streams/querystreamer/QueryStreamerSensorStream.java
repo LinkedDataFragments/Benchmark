@@ -81,7 +81,7 @@ public abstract class QueryStreamerSensorStream implements Runnable {
 		long timeFinal = System.currentTimeMillis() + sleep;
 		for (IdentifiableStatement is : statements) {
 			for (Statement st : is.statements) {
-				getEndpoint().stream(st.getSubject(), st.getPredicate(), st.getObject());
+				getEndpoint().stream(st.getSubject(), st.getPredicate(), st.getObject(), null);
 			}
 			getEndpoint().flush(timeInitial, timeFinal, is.id);
 		}

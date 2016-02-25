@@ -37,11 +37,16 @@ public class QueryStreamerEndpoint {
      * @param s The subject.
      * @param p The predicate.
      * @param o The object.
-     *
+     * @param g The graph
      */
-    public synchronized void stream(Resource s, Resource p, RDFNode o) {
-        buffer.add(String.format("<%s> <%s> %s.", s.toString(), p.toString(),
-                o.isLiteral() ? String.format("\"%s\"", o.toString()) : String.format("<%s>", o.toString())));
+    public synchronized void stream(Resource s, Resource p, RDFNode o, String g) {
+        String line = String.format("<%s> <%s> %s", s.toString(), p.toString(),
+                o.isLiteral() ? String.format("\"%s\"", o.toString().replaceAll("\"", "'")) : String.format("<%s>", o.toString()));
+        if(g != null) {
+            line += String.format(" <%s>", g);
+        }
+        line += ".";
+        buffer.add(line);
     }
 
     /**
@@ -88,13 +93,21 @@ public class QueryStreamerEndpoint {
         }
     }
 
-    public void insertStaticData(Dataset dataset) {
-        Model model = dataset.getDefaultModel();
+    public void insertStaticData(String graph, Model model) {
         Iterator<Statement> it = model.listStatements();
         while(it.hasNext()) {
             Statement stmnt = it.next();
-            stream(stmnt.getSubject(), stmnt.getPredicate(), stmnt.getObject());
+            stream(stmnt.getSubject(), stmnt.getPredicate(), stmnt.getObject(), graph);
         }
         flush(-1, -1, "STATIC");
+    }
+
+    public void insertStaticData(Dataset dataset) {
+        insertStaticData(null, dataset.getDefaultModel());
+        Iterator<String> namesIt = dataset.listNames();
+        while(namesIt.hasNext()) {
+            String modelName = namesIt.next();
+            insertStaticData(modelName, dataset.getNamedModel(modelName));
+        }
     }
 }
