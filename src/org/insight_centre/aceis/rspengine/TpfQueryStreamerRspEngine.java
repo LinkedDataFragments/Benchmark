@@ -156,9 +156,9 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             throw new Exception("ED not found for: " + uri);
         if (type.contains("traffic")) {
             qss = new QueryStreamerAarhusTrafficStream(endpoint, uri, path, ed, start, end);
-        }/* else if (type.contains("pollution")) {
-            css = new CQELSAarhusPollutionStream(cqelsContext, uri, path, ed, start, end);
-        }*/ else if (type.contains("weather")) {
+        } else if (type.contains("pollution")) {
+            qss = new QueryStreamerAarhusPollutionStream(endpoint, uri, path, ed, start, end);
+        } else if (type.contains("weather")) {
             qss = new QueryStreamerAarhusWeatherStream(endpoint, uri, path, ed, start, end);
         } else if (type.contains("location")) {
             qss = new QueryStreamerLocationStream(endpoint, uri, path, ed);
