@@ -149,7 +149,7 @@ public class PerformanceMonitor implements Runnable {
 				// }
 				System.gc();
 				Runtime rt = Runtime.getRuntime();
-				double usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024.0 / 1024.0;
+				double usedMB = (rt.totalMemory() - rt.freeMemory() + cityBench.engine.getExternalMemoryUsage()) / 1024.0 / 1024.0;
 				// double overhead = (obMapBytes + listerObIdListBytes + listenerResultListBytes) / 1024.0 / 1024.0;
 				this.memoryList.add(usedMB);
 				logger.info("Current performance: L - " + currentLatency + ", Cnt: " + this.resultCntMap + ", Mem - "

@@ -4,11 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.DatasetFactory;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.reasoner.ReasonerRegistry;
 import com.hp.hpl.jena.util.FileManager;
+import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.aceis.io.streams.querystreamer.*;
@@ -21,7 +20,7 @@ import java.util.*;
 
 /**
  * RSP engine declaration for the TPF Query Streamer
- * TODO: correctly handle CPU/MEM measurements
+ * TODO: correctly handle CPU measurements
  * @author Ruben Taelman
  */
 public class TpfQueryStreamerRspEngine extends RspEngine {
@@ -43,6 +42,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
     public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
+    private static int serverPid = -1;
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -119,10 +119,11 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             ProcessBuilder processBuilder = new ProcessBuilder("node ldf-server-http-inserter config_citybench.json".split(" "));
             processBuilder.directory(new File(tpfStreamingExec + "bin/"));
             if(debug) {
-                processBuilder.inheritIO();
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             }
             processBuilder.environment().putAll(env);
             serverProcess = processBuilder.start();
+            new Thread(new ServerObserver(serverProcess, debug)).start();
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -215,6 +216,57 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         proxyProcess.destroyForcibly();
     }
 
+    @Override
+    public int getExternalMemoryUsage() {
+        ProcessBuilder processBuilder = new ProcessBuilder("./top_pid.sh", String.valueOf(serverPid));
+        processBuilder.directory(new File("bin/"));
+        if(debug) {
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        }
+        try {
+            Process process = processBuilder.start();
+            process.waitFor();
+            String line = IOUtils.toString(process.getInputStream());
+            String[] split = line.split(" ");
+            int multiplier = 1;
+            if(split[2].contains("K")) multiplier = 1024;
+            if(split[2].contains("M")) multiplier = 1024 * 1024;
+            if(split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
+            return Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier;
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public static class ServerObserver implements Runnable {
+
+        private final Process serverProccess;
+        private final boolean debug;
+
+        public ServerObserver(Process serverProccess, boolean debug) {
+            this.serverProccess = serverProccess;
+            this.debug = debug;
+        }
+
+        @Override
+        public void run() {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(serverProccess.getInputStream()));
+            String result;
+            try {
+                while ((result = reader.readLine()) != null) {
+                    if (result.contains("$PID=")) {
+                        serverPid = Integer.parseInt(result.substring("$PID=".length()));
+                    } else if(debug) {
+                        System.out.println(result);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static class ResultObserver implements Runnable {
 
         private final Process queryProcess;
@@ -231,7 +283,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             String result;
             try {
                 while ((result = reader.readLine()) != null) {
-                    if(result.contains("$RESULT=")) {
+                    if (result.contains("$RESULT=")) {
                         Map<String, Long> latencies = Maps.newHashMap();
                         Map<String, String> data = new Gson().fromJson(result.substring("$RESULT=".length()), new TypeToken<Map<String, String>>(){}.getType());
                         for(Map.Entry<String, String> entry : data.entrySet()) {

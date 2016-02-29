@@ -80,4 +80,11 @@ public abstract class RspEngine {
     abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
     abstract public void destroy(CityBench cityBench);
 
+    /**
+     * @return The additional memory usage that should be taken into account for this RSP engine (in bytes).
+     */
+    public int getExternalMemoryUsage() {
+        return 0;
+    }
+
 }
