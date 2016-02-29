@@ -1,7 +1,7 @@
 select ?obId1  ?obId3  ?v1  ?v3   (((?v1+?v3)/2) as ?avgCongest)
  FROM <http://127.0.0.1:9000/WebGlCity/RDF/SensorRepository.rdf>  
-from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData182955> [range 3s step 1s] 
-from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData158505> [range 3s step 1s] 
+from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData182955> [range 10s step 1s]
+from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData158505> [range 10s step 1s]
 where {
 ###  bind((?v1+?v3)/2) as ?avgCongest
 ###  bind((?v2+?v4)/2) as ?avgEstimatedTime

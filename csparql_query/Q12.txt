@@ -2,7 +2,7 @@
 ### as a result the latency cannot be evaluated.
 
 select (count(?obId1) as ?obCnt) 
-  from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData186979> [range 3000ms step 1s]
+  from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusTrafficData186979> [range 10s step 1s]
   from <http://127.0.0.1:9000/WebGlCity/RDF/SensorRepository.rdf> 
 where {
 

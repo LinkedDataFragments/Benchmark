@@ -1,6 +1,6 @@
 ### negation supported in csparql but cannot evaluate latency or completeness
 Ask  
-from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusWeatherData0> [range 3s step 1s] 
+from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusWeatherData0> [range 10s step 1s]
 where {
 
  

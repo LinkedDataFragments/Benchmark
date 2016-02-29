@@ -14,7 +14,7 @@ stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollution
 ?obId1 <http://purl.oclc.org/NET/sao/hasValue> ?v1.
 ?obId1 <http://purl.oclc.org/NET/ssnx/ssn#observedBy> <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData201399>.
 }
- stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusWeatherData0> [range 3000ms slide 1s] 
+ stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusWeatherData0> [range 10s slide 1s]
 {?obId2 a ?ob.
 ?obId2 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p2.
 ?obId2 <http://purl.oclc.org/NET/sao/hasValue> ?v2.

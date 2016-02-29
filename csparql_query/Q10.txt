@@ -1,7 +1,7 @@
 
 select ?obId1 ?obId2 #?lat1 ?lon1 ?lat2 ?lon2 ?v1 ?v2 ((?v1+?v2) as ?sumOfAPI)
-from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData201399> [range 3s step 1s] 
-from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData184892> [range 3s step 1s] 
+from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData201399> [range 10s step 1s]
+from stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData184892> [range 10s step 1s]
 from <http://127.0.0.1:9000/WebGlCity/RDF/SensorRepository.rdf> 
 where {
 

@@ -3,7 +3,7 @@ select ?evtId ?title ?node ?obId2 ?lat2 ?lon2 ?lat1 ?lon1
 
 FROM <http://127.0.0.1:9000/WebGlCity/RDF/AarhusCulturalEvents.rdf>  
 
-FROM stream <http://www.insight-centre.org/dataset/SampleEventService#UserLocationService> [range 3000ms step 1s] 
+FROM stream <http://www.insight-centre.org/dataset/SampleEventService#UserLocationService> [range 10s step 1s]
 
 where {
 ?evtId a  <http://purl.oclc.org/NET/sao/Point>. 

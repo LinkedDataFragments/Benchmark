@@ -8,31 +8,31 @@ where {
 #?p4   a <http://www.insight-centre.org/citytraffic#CongestionLevel>.
 #?p5   a <http://www.insight-centre.org/citytraffic#CongestionLevel>.
 
-stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData182955> [range 3000ms slide 1s] 
+stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData182955> [range 10s slide 1s]
 {?obId1 a ?ob.
 ?obId1 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p1.
 ?obId1 <http://purl.oclc.org/NET/sao/hasValue> ?v1.
 ?obId1 <http://purl.oclc.org/NET/ssnx/ssn#observedBy> <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData182955>.
 }
-stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData158505> [range 3000ms slide 1s]
+stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData158505> [range 10s slide 1s]
 {?obId2 a ?ob.
 ?obId2 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p2.
 ?obId2 <http://purl.oclc.org/NET/sao/hasValue> ?v2.
 ?obId2 <http://purl.oclc.org/NET/ssnx/ssn#observedBy> <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData158505>.
 }
-stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData206502> [range 3000ms slide 1s]
+stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData206502> [range 10s slide 1s]
 {?obId3 a ?ob.
 ?obId3 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p3.
 ?obId3 <http://purl.oclc.org/NET/sao/hasValue> ?v3.
 ?obId3 <http://purl.oclc.org/NET/ssnx/ssn#observedBy> <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData206502>.
 }
-stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData179093> [range 3000ms slide 1s]
+stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData179093> [range 10s slide 1s]
 {?obId4 a ?ob.
 ?obId4 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p4.
 ?obId4 <http://purl.oclc.org/NET/sao/hasValue> ?v4.
 ?obId4 <http://purl.oclc.org/NET/ssnx/ssn#observedBy> <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData179093>.
 }
-stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData195843> [range 3000ms slide 1s]
+stream <http://www.insight-centre.org/dataset/SampleEventService#AarhusPollutionData195843> [range 10s slide 1s]
 {?obId5 a ?ob.
 ?obId5 <http://purl.oclc.org/NET/ssnx/ssn#observedProperty> ?p5.
 ?obId5 <http://purl.oclc.org/NET/sao/hasValue> ?v5.
