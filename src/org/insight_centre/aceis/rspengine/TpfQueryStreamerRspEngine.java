@@ -41,7 +41,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
     public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
     private static int serverPid = -1;
-    private static int clientPid = -1;
+    private static final List<Integer> clientPids = Lists.newLinkedList();
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -222,14 +222,28 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public long getClientMemoryUsage() {
-        if(clientPid == -1) return 0; // Client may not have been started yet.
-        return getProcessStats(clientPid).getMemory();
+        long total = 0;
+        List<Integer> pids;
+        synchronized (clientPids) {
+            pids = Lists.newArrayList(clientPids);
+        }
+        for(int clientPid : pids) {
+            total += getProcessStats(clientPid).getMemory();
+        }
+        return total;
     }
 
     @Override
     public double getClientCpu() {
-        if(clientPid == -1) return 0; // Client may not have been started yet.
-        return getProcessStats(clientPid).getCpu();
+        double total = 0;
+        List<Integer> pids;
+        synchronized (clientPids) {
+            pids = Lists.newArrayList(clientPids);
+        }
+        for(int clientPid : pids) {
+            total += getProcessStats(clientPid).getCpu();
+        }
+        return total;
     }
 
     public static class ServerObserver implements Runnable {
@@ -277,7 +291,9 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             try {
                 while ((result = reader.readLine()) != null) {
                     if (result.contains("$PID=")) {
-                        clientPid = Integer.parseInt(result.substring("$PID=".length()));
+                        synchronized (clientPids) {
+                            clientPids.add(Integer.parseInt(result.substring("$PID=".length())));
+                        }
                     } else if (result.contains("$RESULT=")) {
                         Map<String, Long> latencies = Maps.newHashMap();
                         Map<String, String> data = new Gson().fromJson(result.substring("$RESULT=".length()), new TypeToken<Map<String, String>>(){}.getType());
