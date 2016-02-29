@@ -7,7 +7,6 @@ import com.google.gson.reflect.TypeToken;
 import com.hp.hpl.jena.query.DatasetFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.util.FileManager;
-import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.aceis.io.streams.querystreamer.*;
@@ -20,7 +19,6 @@ import java.util.*;
 
 /**
  * RSP engine declaration for the TPF Query Streamer
- * TODO: correctly handle CPU measurements
  * @author Ruben Taelman
  */
 public class TpfQueryStreamerRspEngine extends RspEngine {
@@ -43,6 +41,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
     public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
     private static int serverPid = -1;
+    private static int clientPid = -1;
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -217,26 +216,20 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     }
 
     @Override
-    public int getExternalMemoryUsage() {
-        ProcessBuilder processBuilder = new ProcessBuilder("./top_pid.sh", String.valueOf(serverPid));
-        processBuilder.directory(new File("bin/"));
-        if(debug) {
-            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        }
-        try {
-            Process process = processBuilder.start();
-            process.waitFor();
-            String line = IOUtils.toString(process.getInputStream());
-            String[] split = line.split(" ");
-            int multiplier = 1;
-            if(split[2].contains("K")) multiplier = 1024;
-            if(split[2].contains("M")) multiplier = 1024 * 1024;
-            if(split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
-            return Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier;
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        return 0;
+    public long getServerMemoryUsage() {
+        return super.getServerMemoryUsage() + getProcessStats(serverPid).getMemory();
+    }
+
+    @Override
+    public long getClientMemoryUsage() {
+        if(clientPid == -1) return 0; // Client may not have been started yet.
+        return getProcessStats(clientPid).getMemory();
+    }
+
+    @Override
+    public double getClientCpu() {
+        if(clientPid == -1) return 0; // Client may not have been started yet.
+        return getProcessStats(clientPid).getCpu();
     }
 
     public static class ServerObserver implements Runnable {
@@ -283,7 +276,9 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             String result;
             try {
                 while ((result = reader.readLine()) != null) {
-                    if (result.contains("$RESULT=")) {
+                    if (result.contains("$PID=")) {
+                        clientPid = Integer.parseInt(result.substring("$PID=".length()));
+                    } else if (result.contains("$RESULT=")) {
                         Map<String, Long> latencies = Maps.newHashMap();
                         Map<String, String> data = new Gson().fromJson(result.substring("$RESULT=".length()), new TypeToken<Map<String, String>>(){}.getType());
                         for(Map.Entry<String, String> entry : data.entrySet()) {

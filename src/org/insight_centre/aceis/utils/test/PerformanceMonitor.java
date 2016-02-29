@@ -1,6 +1,8 @@
 package org.insight_centre.aceis.utils.test;
 
 import com.csvreader.CsvWriter;
+import com.google.common.collect.Lists;
+import org.insight_centre.aceis.rspengine.RspEngine;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +21,10 @@ public class PerformanceMonitor implements Runnable {
 	private String resultName;
 	private long start = 0;
 	private ConcurrentHashMap<String, List<Long>> latencyMap = new ConcurrentHashMap<String, List<Long>>();
-	private List<Double> memoryList = new ArrayList<Double>();;
+	private List<Double> serverMemories = Lists.newLinkedList();
+	private List<Double> clientMemories = Lists.newLinkedList();
+	private List<Double> serverCpus = Lists.newLinkedList();
+	private List<Double> clientCpus = Lists.newLinkedList();
 	private ConcurrentHashMap<String, Long> resultCntMap = new ConcurrentHashMap<String, Long>();
 	private CsvWriter cw;
 	private long resultInitTime = 0, lastCheckPoint = 0, globalInit = 0;
@@ -51,7 +56,10 @@ public class PerformanceMonitor implements Runnable {
 		// for (String qid : qList) {
 		// cw.write("cnt-" + qid);
 		// }
-		cw.write("memory");
+		cw.write("server-memory");
+		cw.write("client-memory");
+		cw.write("server-cpu");
+		cw.write("client-cpu");
 		cw.endRecord();
 		// cw.flush();
 		// cw.
@@ -87,17 +95,15 @@ public class PerformanceMonitor implements Runnable {
 					}
 					// for (String qid : this.qList)
 					// cw.write((this.resultCntMap.get(qid) / (this.duplicates + 0.0)) + "");
-					double memory = 0.0;
-					for (double m : this.memoryList)
-						memory += m;
-					memory = memory / (this.memoryList.size() + 0.0);
-					cw.write(memory + "");
+					cw.write(averageAndClear(serverMemories) + "");
+					cw.write(averageAndClear(clientMemories) + "");
+					cw.write(averageAndClear(serverCpus) + "");
+					cw.write(averageAndClear(clientCpus) + "");
 					cw.endRecord();
 					cw.flush();
 					logger.info("Results logged.");
 
 					// empty memory and latency lists
-					this.memoryList.clear();
 					for (Entry<String, List<Long>> en : this.latencyMap.entrySet()) {
 						en.getValue().clear();
 					}
@@ -148,12 +154,20 @@ public class PerformanceMonitor implements Runnable {
 				// }
 				// }
 				System.gc();
-				Runtime rt = Runtime.getRuntime();
-				double usedMB = (rt.totalMemory() - rt.freeMemory() + cityBench.engine.getExternalMemoryUsage()) / 1024.0 / 1024.0;
+				RspEngine e = cityBench.engine;
+				double serverUsedMB = e.getServerMemoryUsage() / 1024.0 / 1024.0;
+				double clientUsedMB = e.getClientMemoryUsage() / 1024.0 / 1024.0;
+				double serverCpu = e.getServerCpu();
+				double clientCpu = e.getClientCpu();
 				// double overhead = (obMapBytes + listerObIdListBytes + listenerResultListBytes) / 1024.0 / 1024.0;
-				this.memoryList.add(usedMB);
-				logger.info("Current performance: L - " + currentLatency + ", Cnt: " + this.resultCntMap + ", Mem - "
-						+ usedMB);// + ", monitoring overhead - " + overhead);
+				this.serverMemories.add(serverUsedMB);
+				this.clientMemories.add(clientUsedMB);
+				this.serverCpus.add(serverCpu);
+				this.clientCpus.add(clientCpu);
+				logger.info(String.format("Current performance: L - %s, Cnt: %s, SMem - %s, SCpu - %s, CMem: %s, CCpu: %s",
+						currentLatency, this.resultCntMap,
+						serverUsedMB, serverCpu,
+						clientUsedMB, clientCpu));// + ", monitoring overhead - " + overhead);
 				Thread.sleep(5000);
 
 			} catch (InterruptedException e) {
@@ -165,6 +179,16 @@ public class PerformanceMonitor implements Runnable {
 			}
 		}
 		System.exit(0);
+	}
+
+	protected static double averageAndClear(List<Double> list) {
+		double value = 0.0;
+		for (double m : list) {
+			value += m;
+		}
+		value = value / ((double) list.size());
+		list.clear();
+		return value;
 	}
 
 	private void cleanup() {

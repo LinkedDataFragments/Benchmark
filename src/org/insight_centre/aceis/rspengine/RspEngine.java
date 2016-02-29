@@ -1,11 +1,18 @@
 package org.insight_centre.aceis.rspengine;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.management.ManagementFactory;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +26,8 @@ import java.util.UUID;
 public abstract class RspEngine {
 
     protected static final Logger logger = LoggerFactory.getLogger(CityBench.class);
+
+    private static final Map<Long, ProcessStats> lastProcessStats = Maps.newConcurrentMap();
 
     private final String id;
     private String queryDirectory = null;
@@ -80,11 +89,104 @@ public abstract class RspEngine {
     abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
     abstract public void destroy(CityBench cityBench);
 
+    protected static ProcessStats getProcessStats(long pid) {
+        if(pid < 0) {
+            throw new IllegalArgumentException("Pid must be >= 0, got " + pid);
+        }
+        if(!lastProcessStats.containsKey(pid)) {
+            new Thread(new ProcessStatter(pid)).start();
+            while(!lastProcessStats.containsKey(pid)) {
+                Thread.yield();
+            }
+        }
+        return lastProcessStats.get(pid);
+    }
+
+    public static long getPid() {
+        String processName = ManagementFactory.getRuntimeMXBean().getName();
+        return Long.parseLong(processName.split("@")[0]);
+    }
+
     /**
-     * @return The additional memory usage that should be taken into account for this RSP engine (in bytes).
+     * @return The current server memory usage (in bytes).
      */
-    public int getExternalMemoryUsage() {
+    public long getServerMemoryUsage() {
+        Runtime rt = Runtime.getRuntime();
+        return rt.totalMemory() - rt.freeMemory();
+        //return getProcessStats(getPid()).getMemory();
+    }
+
+    /**
+     * @return The percentage of cpu usage the (RSP) server currently uses.
+     */
+    public double getServerCpu() {
+        return getProcessStats(getPid()).getCpu();
+    }
+
+    /**
+     * @return The current client memory usage (in bytes).
+     */
+    public long getClientMemoryUsage() {
         return 0;
+    }
+
+    /**
+     * @return The percentage of cpu usage the (RSP) client currently uses.
+     */
+    public double getClientCpu() {
+        return 0;
+    }
+
+    static class ProcessStats {
+
+        private final double cpu;
+        private final long memory;
+
+        ProcessStats(double cpu, long memory) {
+            this.cpu = cpu;
+            this.memory = memory;
+        }
+
+        public long getMemory() {
+            return memory;
+        }
+
+        public double getCpu() {
+            return cpu;
+        }
+    }
+
+    static class ProcessStatter implements Runnable {
+
+        private final long pid;
+
+        ProcessStatter(long pid) {
+            this.pid = pid;
+        }
+
+        @Override
+        public void run() {
+            ProcessBuilder processBuilder = new ProcessBuilder("./top_pid.sh", String.valueOf(pid));
+            processBuilder.directory(new File("bin/"));
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            try {
+                Process process = processBuilder.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] split = line.split(" +");
+                    int multiplier = 1;
+                    if(split[2].contains("K")) multiplier = 1024;
+                    if(split[2].contains("M")) multiplier = 1024 * 1024;
+                    if(split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
+                    ProcessStats stats = new ProcessStats(
+                            Double.parseDouble(split[1]), Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier);
+                    lastProcessStats.put(pid, stats);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }
