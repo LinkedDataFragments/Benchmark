@@ -70,17 +70,9 @@ public class PerformanceMonitor implements Runnable {
 		int minuteCnt = 0;
 		while (!stop) {
 			try {
-				if (((System.currentTimeMillis() - this.globalInit) > 1.5 * duration)
-						|| (duration != 0 && resultInitTime != 0 && (System.currentTimeMillis() - this.resultInitTime) > (30000 + duration))) {
-					this.cw.flush();
-					this.cw.close();
-					logger.info("Stopping after " + (System.currentTimeMillis() - this.globalInit) + " ms.");
-					this.cleanup();
-					logger.info("Experimment stopped.");
-					System.exit(0);
-				}
-
-				if (this.lastCheckPoint != 0 && (System.currentTimeMillis() - this.lastCheckPoint) >= 60000) {
+				boolean shouldStop = ((System.currentTimeMillis() - this.globalInit) > 1.5 * duration)
+						|| (duration != 0 && resultInitTime != 0 && (System.currentTimeMillis() - this.resultInitTime) > (30000 + duration));
+				if (shouldStop || this.lastCheckPoint != 0 && (System.currentTimeMillis() - this.lastCheckPoint) >= 60000) {
 					minuteCnt += 1;
 
 					this.lastCheckPoint = System.currentTimeMillis();
@@ -168,6 +160,16 @@ public class PerformanceMonitor implements Runnable {
 						currentLatency, this.resultCntMap,
 						serverUsedMB, serverCpu,
 						clientUsedMB, clientCpu));// + ", monitoring overhead - " + overhead);
+
+				if (shouldStop) {
+					this.cw.flush();
+					this.cw.close();
+					logger.info("Stopping after " + (System.currentTimeMillis() - this.globalInit) + " ms.");
+					this.cleanup();
+					logger.info("Experiment stopped.");
+					System.exit(0);
+				}
+
 				Thread.sleep(5000);
 
 			} catch (InterruptedException e) {
