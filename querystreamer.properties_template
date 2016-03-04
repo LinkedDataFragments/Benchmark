@@ -4,7 +4,7 @@ ldfServerBin = bin/ldf-server
 insertPort = 4000
 target = http://localhost:3001/citybench
 
-debug = true
+debug = false
 type = TODO:type
-interval = false
-caching = false
+interval = TODO:interval
+caching = TODO:caching
