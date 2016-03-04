@@ -335,4 +335,8 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         }
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + "$" + String.format("type:%s;interval:%s;caching:%s;", type, interval, caching);
+    }
 }

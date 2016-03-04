@@ -167,7 +167,7 @@ public class CityBench {
 				+ this.rate + ", frequency - " + this.frequency + ", duration - " + this.duration + ", duplicates - "
 				+ this.queryDuplicates + ", start - " + this.start + ", end - " + this.end);
 
-		this.resultName = UUID.randomUUID() + " r=" + this.rate + ",f=" + this.frequency + ",dup="
+		this.resultName = UUID.randomUUID() + "$r=" + this.rate + ",f=" + this.frequency + ",dup="
 				+ this.queryDuplicates + ",e=" + this.engine + ",q=" + this.queries;// +
 		// parameters.toString();
 		this.engine.init(this.dataset);
