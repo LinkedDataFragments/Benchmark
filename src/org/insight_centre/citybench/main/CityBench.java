@@ -84,7 +84,7 @@ public class CityBench {
 	public double rate = 1.0; // stream rate factor
 	public static ConcurrentHashMap<String, Object> registeredQueries = new ConcurrentHashMap<String, Object>();
 	public static List startedStreamObjects = new ArrayList();
-	private String resultName;
+	private static String resultName;
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	public Date start, end;
 	public Set<String> startedStreams = new HashSet<String>();
@@ -188,7 +188,7 @@ public class CityBench {
 		}
 	}
 
-	public String getResultName() {
+	public static String getResultName() {
 		return resultName;
 	}
 

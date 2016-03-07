@@ -14,6 +14,9 @@ import org.insight_centre.aceis.observations.SensorObservation;
 import org.insight_centre.citybench.main.CityBench;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.*;
 
@@ -31,7 +34,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     private String ldfServerPath = tpfStreamingExec + "node_modules/ldf-server/";
     private String ldfServerBin = "bin/ldf-server";
     private int insertPort = 4000;
-    private String target = "http://localhost:3001/train";
+    private String target = "http://localhost:3001/citybench";
 
     private boolean debug = true;
     private String type = "graphs";
@@ -100,6 +103,11 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         env.put("INTERVAL", Boolean.toString(interval));
         env.put("INSERTPORT", Integer.toString(insertPort));
         env.put("TARGET", target);
+        File proxybindir = new File("result_log/proxy_bins");
+        if(!proxybindir.exists()) {
+            proxybindir.mkdir();
+        }
+        env.put("PROXYBINSFILE", "result_log/proxy_bins/" + CityBench.getResultName() + ".csv");
 
         // Start the proxy between our client and server
         try {
@@ -107,6 +115,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             if(debug) {
                 processBuilder.inheritIO();
             }
+            processBuilder.environment().putAll(env);
             proxyProcess = processBuilder.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -211,8 +220,22 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         }
 
         // Stop server
+        writeProxyBins();
         serverProcess.destroyForcibly();
         proxyProcess.destroyForcibly();
+    }
+
+    private void writeProxyBins() {
+        try {
+            String closeProxy = target + "/closeProxy";
+            URL url = new URL(closeProxy);
+            URLConnection connection = url.openConnection();
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            while (in.readLine() != null); // Make sure we capture all output, and only close after that.
+            in.close();
+        } catch (IOException e) {
+            // Ignore errors, because an error will be thrown once the proxy closes, which is what we want.
+        }
     }
 
     @Override
