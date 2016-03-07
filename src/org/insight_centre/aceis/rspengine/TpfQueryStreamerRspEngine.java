@@ -103,11 +103,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         env.put("INTERVAL", Boolean.toString(interval));
         env.put("INSERTPORT", Integer.toString(insertPort));
         env.put("TARGET", target);
-        File proxybindir = new File("result_log/proxy_bins");
-        if(!proxybindir.exists()) {
-            proxybindir.mkdir();
-        }
-        env.put("PROXYBINSFILE", "result_log/proxy_bins/" + CityBench.getResultName() + ".csv");
+        env.put("PROXYBINSFILE", "result_log/" + CityBench.getResultName() + "-proxybins.json");
 
         // Start the proxy between our client and server
         try {
@@ -360,6 +356,6 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public String toString() {
-        return super.toString() + "$" + String.format("type:%s;interval:%s;caching:%s;", type, interval, caching);
+        return super.toString() + "_" + String.format("type=%s;interval=%s;caching=%s", type, interval, caching);
     }
 }

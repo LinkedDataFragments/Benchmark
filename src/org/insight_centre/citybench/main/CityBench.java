@@ -167,9 +167,13 @@ public class CityBench {
 				+ this.rate + ", frequency - " + this.frequency + ", duration - " + this.duration + ", duplicates - "
 				+ this.queryDuplicates + ", start - " + this.start + ", end - " + this.end);
 
-		this.resultName = UUID.randomUUID() + "$r=" + this.rate + ",f=" + this.frequency + ",dup="
-				+ this.queryDuplicates + ",e=" + this.engine + ",q=" + this.queries;// +
-		// parameters.toString();
+		new File("result_log" + File.separator + this.engine.toString()).mkdir();
+		this.resultName = this.engine + File.separator
+				+ String.format("r=%s;f=%s;dup=%s;q=%s",
+				this.rate, this.frequency, this.queryDuplicates, this.queries);
+		if(new File(this.resultName).exists()) {
+			this.resultName += ";" + UUID.randomUUID();
+		}
 		this.engine.init(this.dataset);
 		this.er = RDFFileManager.buildRepoFromFile(0);
 	}
