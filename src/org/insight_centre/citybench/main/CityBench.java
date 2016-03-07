@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -167,13 +168,12 @@ public class CityBench {
 				+ this.rate + ", frequency - " + this.frequency + ", duration - " + this.duration + ", duplicates - "
 				+ this.queryDuplicates + ", start - " + this.start + ", end - " + this.end);
 
-		new File("result_log" + File.separator + this.engine.toString()).mkdir();
-		this.resultName = this.engine + File.separator
+		String time = LocalDateTime.now().toString();
+		new File("result_log" + File.separator + time).mkdir();
+		new File("result_log" + File.separator + time + File.separator + this.engine.toString()).mkdir();
+		this.resultName = time + File.separator + this.engine + File.separator
 				+ String.format("r=%s;f=%s;dup=%s;q=%s",
 				this.rate, this.frequency, this.queryDuplicates, this.queries);
-		if(new File(this.resultName).exists()) {
-			this.resultName += ";" + UUID.randomUUID();
-		}
 		this.engine.init(this.dataset);
 		this.er = RDFFileManager.buildRepoFromFile(0);
 	}
