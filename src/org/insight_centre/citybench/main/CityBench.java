@@ -168,10 +168,8 @@ public class CityBench {
 				+ this.rate + ", frequency - " + this.frequency + ", duration - " + this.duration + ", duplicates - "
 				+ this.queryDuplicates + ", start - " + this.start + ", end - " + this.end);
 
-		String time = LocalDateTime.now().toString();
-		new File("result_log" + File.separator + time).mkdir();
-		new File("result_log" + File.separator + time + File.separator + this.engine.toString()).mkdir();
-		this.resultName = time + File.separator + this.engine + File.separator
+		new File("result_log" + File.separator + this.engine.toString()).mkdir();
+		this.resultName = this.engine + File.separator
 				+ String.format("r=%s;f=%s;dup=%s;q=%s",
 				this.rate, this.frequency, this.queryDuplicates, this.queries);
 		this.engine.init(this.dataset);
