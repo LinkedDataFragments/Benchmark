@@ -46,7 +46,3 @@ Acceptable params:
 * query = (String) q // file names of the queries to run (under cqels_query or csparql_query), separate with ","
 
 engine, start and end dates are  mandatory.
-## Notice for C-SPARQL tests
-Some C-sparql queries needs loading static knowledge bases, those queries contains clauses like " FROM <http://127.0.0.1:9000/WebGlCity/RDF/SensorRepository.rdf> ".
-
-To load such RDF files, deploy the rdf files under "dataset/csparql_web_server/" on your local web server and make sure they are accessible from the url specified in the clause (you can change the url according to your web server configuration).
