@@ -105,7 +105,11 @@ public abstract class RspEngine {
             }
             processStatters.add(statter);
         }
-        return lastProcessStats.get(pid);
+        ProcessStats processStats = lastProcessStats.get(pid);
+        if(processStats == null) {
+            processStats = new ProcessStats(0, 0);
+        }
+        return processStats;
     }
 
     public static long getPid() {
@@ -192,6 +196,7 @@ public abstract class RspEngine {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                lastProcessStats.put(pid, null);
             }
         }
 
