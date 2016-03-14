@@ -24,7 +24,13 @@ fi
 
 # Start logging top output
 if [ "$(uname)" == "Darwin" ]; then
-    top -pid $PID -stats pid,cpu,mem -d -l 0 -s 5 | awk '{if($1 == '$PID'){ print;system(""); }}'
+    top -pid $PID -stats pid,cpu,mem -d -l 0 -s 5 | awk '{if($1 == '$PID'){ print;system(""); }}' &
+    sub=$!
 else
-    top -p $PID -b -d 1 | gawk '{if($1 == '$PID'){ print $1 " " $9 " " $10;system(""); }}'
+    top -p $PID -b -d 1 | gawk '{if($1 == '$PID'){ print $1 " " $9 " " $10;system(""); }}' &
+    sub=$!
 fi
+
+# Force-kill top to avoid orphan processes
+trap "kill -9 $sub" SIGINT SIGTERM EXIT
+wait $sub

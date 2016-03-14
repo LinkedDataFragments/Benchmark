@@ -81,6 +81,7 @@ public class CqelsRspEngine extends RspEngine {
 
     @Override
     public void destroy(CityBench cityBench) {
+        super.destroy(cityBench);
         // CityBench.cqelsContext.engine().
         for (Object css : CityBench.startedStreamObjects) {
             ((CQELSSensorStream) css).stop();

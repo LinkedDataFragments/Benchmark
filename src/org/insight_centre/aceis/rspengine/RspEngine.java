@@ -1,5 +1,6 @@
 package org.insight_centre.aceis.rspengine;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
@@ -27,6 +28,7 @@ public abstract class RspEngine {
 
     protected static final Logger logger = LoggerFactory.getLogger(CityBench.class);
 
+    private static final List<ProcessStatter> processStatters = Lists.newLinkedList();
     private static final Map<Long, ProcessStats> lastProcessStats = Maps.newConcurrentMap();
 
     private final String id;
@@ -87,17 +89,21 @@ public abstract class RspEngine {
     abstract public void startTests(CityBench cityBench, Map<String, String> queryMap, int queryDuplicates) throws Exception;
     abstract public Object constructStream(String type, String uri, String path, EventDeclaration ed, Date start, Date end, double rate, double frequency) throws Exception;
     abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
-    abstract public void destroy(CityBench cityBench);
+    public void destroy(CityBench cityBench) {
+        processStatters.forEach(ProcessStatter::stopProcess);
+    }
 
     protected static ProcessStats getProcessStats(long pid) {
         if(pid < 0) {
             throw new IllegalArgumentException("Pid must be >= 0, got " + pid);
         }
         if(!lastProcessStats.containsKey(pid)) {
-            new Thread(new ProcessStatter(pid)).start();
+            ProcessStatter statter = new ProcessStatter(pid);
+            new Thread(statter).start();
             while(!lastProcessStats.containsKey(pid)) {
                 Thread.yield();
             }
+            processStatters.add(statter);
         }
         return lastProcessStats.get(pid);
     }
@@ -159,6 +165,7 @@ public abstract class RspEngine {
     static class ProcessStatter implements Runnable {
 
         private final long pid;
+        private Process process;
 
         ProcessStatter(long pid) {
             this.pid = pid;
@@ -170,7 +177,7 @@ public abstract class RspEngine {
             processBuilder.directory(new File("bin/"));
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             try {
-                Process process = processBuilder.start();
+                this.process = processBuilder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -187,6 +194,17 @@ public abstract class RspEngine {
                 e.printStackTrace();
             }
         }
+
+        public void stopProcess() {
+            if(this.process != null) {
+                try {
+                    this.process.destroyForcibly().waitFor();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
     }
 
     @Override

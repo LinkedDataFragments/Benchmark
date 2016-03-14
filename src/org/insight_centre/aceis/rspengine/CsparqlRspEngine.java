@@ -106,6 +106,7 @@ public class CsparqlRspEngine extends RspEngine {
 
     @Override
     public void destroy(CityBench cityBench) {
+        super.destroy(cityBench);
         // CityBench.csparqlEngine.destroy();
         for (Object css : CityBench.startedStreamObjects) {
             ((CSPARQLSensorStream) css).stop();

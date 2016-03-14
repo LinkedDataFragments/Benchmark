@@ -35,6 +35,13 @@ public class PerformanceMonitor implements Runnable {
 
 	public PerformanceMonitor(Map<String, String> queryMap, long duration, int duplicates, String resultName, CityBench cityBench)
 			throws Exception {
+		// This is to make sure that we clean everything up even if we crash
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				cleanup();
+			}
+		});
 		this.cityBench = cityBench;
 		qMap = queryMap;
 		this.duration = duration;

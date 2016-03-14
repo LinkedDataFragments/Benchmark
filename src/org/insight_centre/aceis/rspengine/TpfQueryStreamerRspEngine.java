@@ -205,20 +205,23 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public void destroy(CityBench cityBench) {
-        // Stop queries
-        for(Object q : cityBench.registeredQueries.values()) {
-            ((Process) q).destroyForcibly();
-        }
+        super.destroy(cityBench);
+        try {
+            // Stop queries
+            for (Object q : cityBench.registeredQueries.values()) {
+                ((Process) q).destroyForcibly().waitFor();
+            }
 
-        // Stop streams
-        for (Object css : CityBench.startedStreamObjects) {
-            ((QueryStreamerSensorStream) css).stop();
-        }
+            // Stop streams
+            for (Object css : CityBench.startedStreamObjects) {
+                ((QueryStreamerSensorStream) css).stop();
+            }
 
-        // Stop server
-        writeProxyBins();
-        serverProcess.destroyForcibly();
-        proxyProcess.destroyForcibly();
+            // Stop server
+            writeProxyBins();
+            serverProcess.destroyForcibly().waitFor();
+            proxyProcess.destroyForcibly().waitFor();
+        } catch(InterruptedException e) {}
     }
 
     private void writeProxyBins() {
