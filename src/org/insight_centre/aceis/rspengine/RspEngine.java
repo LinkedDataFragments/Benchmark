@@ -2,6 +2,7 @@ package org.insight_centre.aceis.rspengine;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
@@ -15,10 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * RSP engine declaration.
@@ -30,6 +28,7 @@ public abstract class RspEngine {
 
     private static final List<ProcessStatter> processStatters = Lists.newLinkedList();
     private static final Map<Long, ProcessStats> lastProcessStats = Maps.newConcurrentMap();
+    private static final Set<Long> nullProcessStats = Sets.newHashSet();
 
     private final String id;
     private String queryDirectory = null;
@@ -100,7 +99,7 @@ public abstract class RspEngine {
         if(!lastProcessStats.containsKey(pid)) {
             ProcessStatter statter = new ProcessStatter(pid);
             new Thread(statter).start();
-            while(!lastProcessStats.containsKey(pid)) {
+            while(!nullProcessStats.contains(pid) && !lastProcessStats.containsKey(pid)) {
                 Thread.yield();
             }
             processStatters.add(statter);
@@ -141,7 +140,7 @@ public abstract class RspEngine {
     }
 
     /**
-     * @return The percentage of cpu usage the (RSP) client currently uses.
+     * @return The percentage of cpu usage all (RSP) clients currently use.
      */
     public double getClientCpu() {
         return 0;
@@ -179,24 +178,28 @@ public abstract class RspEngine {
         public void run() {
             ProcessBuilder processBuilder = new ProcessBuilder("./top_pid.sh", String.valueOf(pid));
             processBuilder.directory(new File("bin/"));
-            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            processBuilder.redirectErrorStream(true);
             try {
                 this.process = processBuilder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    String[] split = line.split(" +");
-                    int multiplier = 1;
-                    if(split[2].contains("K")) multiplier = 1024;
-                    if(split[2].contains("M")) multiplier = 1024 * 1024;
-                    if(split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
-                    ProcessStats stats = new ProcessStats(
-                            Double.parseDouble(split[1]), Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier);
-                    lastProcessStats.put(pid, stats);
+                    if(line.contains("Error")) {
+                        System.err.println("Could not top " + pid);
+                        nullProcessStats.add(pid);
+                    } else {
+                        String[] split = line.split(" +");
+                        int multiplier = 1;
+                        if (split[2].contains("K")) multiplier = 1024;
+                        if (split[2].contains("M")) multiplier = 1024 * 1024;
+                        if (split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
+                        ProcessStats stats = new ProcessStats(
+                                Double.parseDouble(split[1]), Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier);
+                        lastProcessStats.put(pid, stats);
+                    }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-                lastProcessStats.put(pid, null);
+                nullProcessStats.add(pid);
             }
         }
 

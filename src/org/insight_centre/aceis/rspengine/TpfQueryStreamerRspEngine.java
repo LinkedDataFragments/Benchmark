@@ -185,6 +185,8 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             processBuilder.directory(new File(tpfStreamingExec + "bin/"));
             if(debug) {
                 processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            } else {
+                processBuilder.redirectErrorStream(true);
             }
 
             Map<String, String> env = Maps.newHashMap();
@@ -348,7 +350,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
                             }
                         }
                     } else {
-                        System.out.println(result);
+                        System.err.println(result);
                     }
                 }
             } catch (IOException e) {
