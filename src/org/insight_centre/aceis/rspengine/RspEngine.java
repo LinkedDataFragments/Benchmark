@@ -26,7 +26,7 @@ public abstract class RspEngine {
 
     protected static final Logger logger = LoggerFactory.getLogger(CityBench.class);
 
-    private static final List<ProcessStatter> processStatters = Lists.newLinkedList();
+    private static final Map<Long, ProcessStatter> processStatters = Maps.newHashMap();
     private static final Map<Long, ProcessStats> lastProcessStats = Maps.newConcurrentMap();
     private static final Set<Long> nullProcessStats = Sets.newHashSet();
 
@@ -89,20 +89,20 @@ public abstract class RspEngine {
     abstract public Object constructStream(String type, String uri, String path, EventDeclaration ed, Date start, Date end, double rate, double frequency) throws Exception;
     abstract public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException;
     public void destroy(CityBench cityBench) {
-        processStatters.forEach(ProcessStatter::stopProcess);
+        processStatters.values().forEach(ProcessStatter::stopProcess);
     }
 
     protected static ProcessStats getProcessStats(long pid) {
         if(pid < 0) {
             throw new IllegalArgumentException("Pid must be >= 0, got " + pid);
         }
-        if(!lastProcessStats.containsKey(pid)) {
+        if(!processStatters.containsKey(pid)) {
             ProcessStatter statter = new ProcessStatter(pid);
+            processStatters.put(pid, statter);
             new Thread(statter).start();
-            while(!nullProcessStats.contains(pid) && !lastProcessStats.containsKey(pid)) {
-                Thread.yield();
-            }
-            processStatters.add(statter);
+        }
+        while(!nullProcessStats.contains(pid) && !lastProcessStats.containsKey(pid)) {
+            Thread.yield();
         }
         ProcessStats processStats = lastProcessStats.get(pid);
         if(processStats == null) {
