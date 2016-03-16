@@ -2,6 +2,7 @@ package org.insight_centre.aceis.utils.test;
 
 import com.csvreader.CsvWriter;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.insight_centre.aceis.rspengine.RspEngine;
 import org.insight_centre.citybench.main.CityBench;
 import org.slf4j.Logger;
@@ -60,9 +61,9 @@ public class PerformanceMonitor implements Runnable {
 			resultCntMap.put(qid, (long) 0);
 			cw.write("latency-" + qid);
 		}
-		// for (String qid : qList) {
-		// cw.write("cnt-" + qid);
-		// }
+		for (String qid : qList) {
+			cw.write("cnt-" + qid);
+		}
 		cw.write("server-memory");
 		cw.write("client-memory");
 		cw.write("server-cpu");
@@ -92,8 +93,9 @@ public class PerformanceMonitor implements Runnable {
 						cw.write(latency + "");
 
 					}
-					// for (String qid : this.qList)
-					// cw.write((this.resultCntMap.get(qid) / (this.duplicates + 0.0)) + "");
+					for (String qid : this.qList) {
+						cw.write((this.resultCntMap.get(qid) / (this.duplicates + 0.0)) + "");
+					}
 					cw.write(averageAndClear(serverMemories) + "");
 					cw.write(averageAndClear(clientMemories) + "");
 					cw.write(averageAndClear(serverCpus) + "");
