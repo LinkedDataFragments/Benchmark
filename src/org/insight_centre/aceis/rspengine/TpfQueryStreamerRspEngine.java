@@ -241,7 +241,12 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public long getServerMemoryUsage() {
-        return super.getServerMemoryUsage() + getProcessStats(serverPid).getMemory();
+        return getProcessStats(serverPid).getMemory();
+    }
+
+    @Override
+    public double getServerCpu() {
+        return getProcessStats(serverPid).getCpu();
     }
 
     @Override
