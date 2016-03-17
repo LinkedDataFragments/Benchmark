@@ -27,6 +27,7 @@ public class PerformanceMonitor implements Runnable {
 	private List<Double> serverCpus = Lists.newLinkedList();
 	private List<Double> clientCpus = Lists.newLinkedList();
 	private ConcurrentHashMap<String, Long> resultCntMap = new ConcurrentHashMap<String, Long>();
+	private Map<String, Float> completeness = Maps.newHashMap();
 	private CsvWriter cw;
 	private long resultInitTime = 0, lastCheckPoint = 0, globalInit = 0;
 	private boolean stop = false;
@@ -68,6 +69,9 @@ public class PerformanceMonitor implements Runnable {
 		cw.write("client-memory");
 		cw.write("server-cpu");
 		cw.write("client-cpu");
+		for (String qid : qList) {
+			cw.write("compl-" + qid);
+		}
 		cw.endRecord();
 		// cw.flush();
 		// cw.
@@ -100,6 +104,9 @@ public class PerformanceMonitor implements Runnable {
 					cw.write(averageAndClear(clientMemories) + "");
 					cw.write(averageAndClear(serverCpus) + "");
 					cw.write(averageAndClear(clientCpus) + "");
+					for (String qid : this.qList) {
+						cw.write(this.completeness.get(qid) + "");
+					}
 					cw.endRecord();
 					cw.flush();
 					logger.info("Results logged.");
@@ -165,10 +172,10 @@ public class PerformanceMonitor implements Runnable {
 				this.clientMemories.add(clientUsedMB);
 				this.serverCpus.add(serverCpu);
 				this.clientCpus.add(clientCpu);
-				logger.info(String.format("Current performance: L - %s, Cnt: %s, SMem - %s, SCpu - %s, CMem: %s, CCpu: %s",
+				logger.info(String.format("Current performance: L - %s, Cnt: %s, SMem - %s, SCpu - %s, CMem: %s, CCpu: %s; Completeness: %s",
 						currentLatency, this.resultCntMap,
 						serverUsedMB, serverCpu,
-						clientUsedMB, clientCpu));// + ", monitoring overhead - " + overhead);
+						clientUsedMB, clientCpu, completeness));// + ", monitoring overhead - " + overhead);
 
 				if (shouldStop) {
 					this.cw.flush();
@@ -216,7 +223,7 @@ public class PerformanceMonitor implements Runnable {
 		this.stop = stop;
 	}
 
-	public synchronized void addResults(String qid, Map<String, Long> results, int cnt) {
+	public synchronized void addResults(String qid, Map<String, Long> results, int cnt, float completeness) {
 		if (this.resultInitTime == 0) {
 			this.resultInitTime = System.currentTimeMillis();
 			this.lastCheckPoint = System.currentTimeMillis();
@@ -228,5 +235,10 @@ public class PerformanceMonitor implements Runnable {
 			this.latencyMap.get(qid).add(delay);
 		}
 		this.resultCntMap.put(qid, this.resultCntMap.get(qid) + cnt);
+		float expected = CityBench.queryCompletenessSelectivity.containsKey(qid) ? CityBench.queryCompletenessSelectivity.get(qid) : 1F;
+		if(!CityBench.queryCompletenessSelectivity.containsKey(qid)) {
+			logger.error("Did not found an expected completeness for " + qid);
+		}
+		this.completeness.put(qid, completeness / expected);
 	}
 }

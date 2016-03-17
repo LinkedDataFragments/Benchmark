@@ -76,7 +76,7 @@ public class CSPARQLResultObserver extends RDFStreamFormatter {
 
 		}
 		if (cnt > 0)
-			CityBench.pm.addResults(getIRI(), latencies, cnt);
+			CityBench.pm.addResults(getIRI(), latencies, cnt, (float) capturedObIds.size() / (float) CityBench.obMap.size());
 
 		// System.out.println();
 

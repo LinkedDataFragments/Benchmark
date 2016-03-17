@@ -47,7 +47,7 @@ public class CQELSResultListener implements ContinuousListener {
 				// uncomment for testing the completeness, i.e., showing how many observations are captured
 				// logger.info("CQELS result arrived " + capturedResults.size() + ", obs size: " + capturedObIds.size()
 				// + ", result: " + result);
-				CityBench.pm.addResults(getUri(), latencies, 1);
+				CityBench.pm.addResults(getUri(), latencies, 1, (float) capturedObIds.size() / (float) CityBench.obMap.size());
 			} else {
 				logger.debug("CQELS result discarded: " + result);
 			}

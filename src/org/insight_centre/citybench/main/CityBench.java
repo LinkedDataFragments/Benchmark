@@ -1,5 +1,6 @@
 package org.insight_centre.citybench.main;
 
+import com.google.common.collect.Maps;
 import org.insight_centre.aceis.io.EventRepository;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.aceis.observations.SensorObservation;
@@ -36,6 +37,16 @@ public class CityBench {
 
 	private static final Logger logger = LoggerFactory.getLogger(CityBench.class);
 	public static ConcurrentHashMap<String, SensorObservation> obMap = new ConcurrentHashMap<String, SensorObservation>();
+	// This contains the expected 'completeness' for each query, this is used to always scale to 100%
+	// This should be removed in favor of automatic query part detection.
+	public static Map<String, Float> queryCompletenessSelectivity = Maps.newHashMap();
+	static {
+		queryCompletenessSelectivity.put("Q1", 0.2F);
+		queryCompletenessSelectivity.put("Q2", 0.875F);
+		queryCompletenessSelectivity.put("Q3", 0.2F);
+		queryCompletenessSelectivity.put("Q6", 1F);
+		queryCompletenessSelectivity.put("Q9", 1F);
+	}
 
 	// HashMap<String, String> parameters;
 	// Properties prop;

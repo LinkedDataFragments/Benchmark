@@ -344,7 +344,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
                         if(!latencies.isEmpty()) {
                             if (!capturedResults.contains(result)) {
                                 capturedResults.add(result);
-                                CityBench.pm.addResults(qid, latencies, 1);
+                                CityBench.pm.addResults(qid, latencies, 1, (float) capturedObIds.size() / (float) CityBench.obMap.size());
                             } else {
                                 logger.debug("Query Streamer result discarded: " + result);
                             }
