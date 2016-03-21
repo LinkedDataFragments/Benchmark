@@ -1,9 +1,6 @@
 package org.insight_centre.aceis.rspengine;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.apache.commons.io.IOUtils;
 import org.insight_centre.aceis.eventmodel.EventDeclaration;
 import org.insight_centre.aceis.io.rdf.RDFFileManager;
 import org.insight_centre.citybench.main.CityBench;
@@ -102,7 +99,8 @@ public abstract class RspEngine {
             processStatters.put(pid, statter);
             new Thread(statter).start();
         }
-        while(!nullProcessStats.contains(pid) && !lastProcessStats.containsKey(pid)) {
+        long end_at = System.currentTimeMillis() + 100; // Wait a maximum of 100 ms on the results, will be repeated during next iteration.
+        while(!nullProcessStats.contains(pid) && !lastProcessStats.containsKey(pid) && System.currentTimeMillis() < end_at) {
             Thread.yield();
         }
         ProcessStats processStats = lastProcessStats.get(pid);
