@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RSP engine declaration.
@@ -26,9 +27,9 @@ public abstract class RspEngine {
 
     protected static final Logger logger = LoggerFactory.getLogger(CityBench.class);
 
-    private static final Map<Long, ProcessStatter> processStatters = Maps.newHashMap();
+    private static final Map<Long, ProcessStatter> processStatters = Maps.newConcurrentMap();
     private static final Map<Long, ProcessStats> lastProcessStats = Maps.newConcurrentMap();
-    private static final Set<Long> nullProcessStats = Sets.newHashSet();
+    private static final Set<Long> nullProcessStats = ConcurrentHashMap.newKeySet();
 
     private final String id;
     private String queryDirectory = null;
@@ -198,9 +199,8 @@ public abstract class RspEngine {
                         lastProcessStats.put(pid, stats);
                     }
                 }
-            } catch (IOException e) {
-                nullProcessStats.add(pid);
-            }
+            } catch (IOException e) {}
+            nullProcessStats.add(pid);
         }
 
         public void stopProcess() {
