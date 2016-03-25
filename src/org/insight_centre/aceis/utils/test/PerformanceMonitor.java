@@ -44,6 +44,14 @@ public class PerformanceMonitor implements Runnable {
 				cleanup();
 			}
 		});
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				logger.error("Stopping because of " + e + " in " + t);
+				e.printStackTrace();
+				System.exit(0);
+			}
+		});
 		this.cityBench = cityBench;
 		qMap = queryMap;
 		this.duration = duration;
