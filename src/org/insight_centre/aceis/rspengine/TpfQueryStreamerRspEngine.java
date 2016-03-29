@@ -14,11 +14,12 @@ import org.insight_centre.aceis.observations.SensorObservation;
 import org.insight_centre.citybench.main.CityBench;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * RSP engine declaration for the TPF Query Streamer
@@ -40,11 +41,17 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     private String type = "graphs";
     private boolean interval = false;
     private boolean caching = false;
+    private static Map<String, List<ClientRegistration>> clientPool = Maps.newHashMap();
+    private String clientsUsername;
+    private String clientsPassword;
 
     public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
     public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
     private static int serverPid = -1;
-    private static final List<Integer> clientPids = Lists.newLinkedList();
+
+    private static final Map<ClientRegistration, ProcessStatter> remoteProcessStatters = Maps.newConcurrentMap();
+    private static final Map<ClientRegistration, ProcessStats> lastRemoteProcessStats = Maps.newConcurrentMap();
+    private static final Set<ClientRegistration> nullRemoteProcessStats = ConcurrentHashMap.newKeySet();
 
     public TpfQueryStreamerRspEngine() {
         super("querystreamer");
@@ -69,6 +76,11 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         type = prop.getProperty("type");
         interval = Boolean.parseBoolean(prop.getProperty("interval"));
         caching = Boolean.parseBoolean(prop.getProperty("caching"));
+        clientPool = Lists.newArrayList(prop.getProperty("client-pool").split(" ")).stream()
+                .collect(Collectors.toMap((c) -> c, (c) -> Lists.newLinkedList()));
+        logger.info("Client pool: " + clientPool);
+        clientsUsername = prop.getProperty("clients-username");
+        clientsPassword = prop.getProperty("clients-password");
 
         // Start the actual LDF server
         startLdfServer();
@@ -93,6 +105,23 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             e.printStackTrace();
             System.exit(0);
         }
+    }
+
+    protected ClientRegistration reserveClient() {
+        String host = null;
+        int count = 0;
+        for (Map.Entry<String, List<ClientRegistration>> entry : clientPool.entrySet()) {
+            if(entry.getValue().size() < count || host == null) {
+                host = entry.getKey();
+                count = entry.getValue().size();
+            }
+        }
+        if(host == null) {
+            throw new RuntimeException("Could not reserve a client in the pool: " + clientPool);
+        }
+        ClientRegistration clientRegistration = new ClientRegistration(host, count);
+        clientPool.get(host).add(clientRegistration);
+        return clientRegistration;
     }
 
     protected boolean startLdfServer() {
@@ -181,26 +210,53 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public void registerQuery(CityBench cityBench, String qid, String query) throws ParseException {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder("node", "querymeta", type);
-            processBuilder.directory(new File(tpfStreamingExec + "bin/"));
+            ClientRegistration registration = reserveClient();
+            clientPool.get(registration.host).add(registration);
+            logger.info(String.format("Registered query %s on %s as %s", qid, registration.host, registration.localId));
+            ProcessBuilder processBuilder = new ProcessBuilder("./start_remote_client.sh",
+                    registration.host,
+                    clientsUsername,
+                    clientsPassword,
+                    Boolean.toString(debug),
+                    type,
+                    Boolean.toString(interval),
+                    Boolean.toString(caching),
+                    query,
+                    target,
+                    Integer.toString(registration.localId));
+            processBuilder.directory(new File("bin/"));
             if(debug) {
                 processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             } else {
                 processBuilder.redirectErrorStream(true);
             }
-
-            Map<String, String> env = Maps.newHashMap();
-            if(debug) env.put("DEBUG", "true");
-            env.put("QUERY", query);
-            env.put("CACHING", Boolean.toString(caching));
-            env.put("TARGET", target);
-
-            processBuilder.environment().putAll(env);
             Process queryProcess = processBuilder.start();
-            new Thread(new ResultObserver(queryProcess, qid)).start();
+            new Thread(new ResultObserver(queryProcess, qid, registration)).start();
 
             cityBench.registeredQueries.put(qid, queryProcess);
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopRemoteClient(ClientRegistration registration) {
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("./stop_remote_client.sh",
+                    registration.host,
+                    clientsUsername,
+                    clientsPassword,
+                    Integer.toString(registration.localId));
+            processBuilder.directory(new File("bin/"));
+            if(debug) {
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            } else {
+                processBuilder.redirectErrorStream(true);
+            }
+            Process stopProcess = processBuilder.start();
+            stopProcess.waitFor();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -213,6 +269,11 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             for (Object q : cityBench.registeredQueries.values()) {
                 ((Process) q).destroyForcibly().waitFor();
             }
+
+            for (ClientRegistration registration : getClientRegistrations()) {
+                stopRemoteClient(registration);
+            }
+
 
             // Stop streams
             for (Object css : CityBench.startedStreamObjects) {
@@ -249,15 +310,31 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         return getProcessStats(serverPid).getCpu();
     }
 
+    protected List<ClientRegistration> getClientRegistrations() {
+        List<ClientRegistration> ret = Lists.newLinkedList();
+        Map<String, List<ClientRegistration>> clientPoolCopy;
+        synchronized (clientPool) {
+            clientPoolCopy = Maps.newHashMap(clientPool);
+        }
+        for (Map.Entry<String, List<ClientRegistration>> entry : clientPoolCopy.entrySet()) {
+            List<ClientRegistration> registrationsCopy;
+            synchronized (entry.getValue()) {
+                registrationsCopy = Lists.newArrayList(entry.getValue());
+            }
+            for (ClientRegistration registration : registrationsCopy) {
+                if (registration.pid >= 0 ) {
+                    ret.add(registration);
+                }
+            }
+        }
+        return ret;
+    }
+
     @Override
     public long getClientMemoryUsage() {
         long total = 0;
-        List<Integer> pids;
-        synchronized (clientPids) {
-            pids = Lists.newArrayList(clientPids);
-        }
-        for(int clientPid : pids) {
-            total += getProcessStats(clientPid).getMemory();
+        for(ClientRegistration registration : getClientRegistrations()) {
+            total += getRemoteProcessStats(registration).getMemory();
         }
         return total;
     }
@@ -265,14 +342,64 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public double getClientCpu() {
         double total = 0;
-        List<Integer> pids;
-        synchronized (clientPids) {
-            pids = Lists.newArrayList(clientPids);
-        }
-        for(int clientPid : pids) {
-            total += getProcessStats(clientPid).getCpu();
+        for(ClientRegistration registration : getClientRegistrations()) {
+            total += getRemoteProcessStats(registration).getCpu();
         }
         return total;
+    }
+
+    protected ProcessStats getRemoteProcessStats(ClientRegistration clientRegistration) {
+        if(!remoteProcessStatters.containsKey(clientRegistration)) {
+            RemoteProcessStatter statter = new RemoteProcessStatter(clientsUsername, clientsPassword, clientRegistration);
+            remoteProcessStatters.put(clientRegistration, statter);
+            new Thread(statter).start();
+        }
+        long end_at = System.currentTimeMillis() + 100; // Wait a maximum of 100 ms on the results, will be repeated during next iteration.
+        while(!nullRemoteProcessStats.contains(clientRegistration) && !lastRemoteProcessStats.containsKey(clientRegistration) && System.currentTimeMillis() < end_at) {
+            Thread.yield();
+        }
+        ProcessStats processStats = lastRemoteProcessStats.get(clientRegistration);
+        if(processStats == null) {
+            processStats = new ProcessStats(0, 0);
+        }
+        return processStats;
+    }
+
+    protected static class RemoteProcessStatter extends ProcessStatter {
+
+        private final ClientRegistration clientRegistration;
+        private final String username;
+        private final String password;
+
+        RemoteProcessStatter(String username, String password, ClientRegistration clientRegistration) {
+            super(clientRegistration.pid);
+            this.username = username;
+            this.password = password;
+            this.clientRegistration = clientRegistration;
+        }
+
+        @Override
+        public void onFail() {
+            nullRemoteProcessStats.add(clientRegistration);
+        }
+
+        @Override
+        public void onSuccess(ProcessStats stats) {
+            lastRemoteProcessStats.put(clientRegistration, stats);
+        }
+
+        @Override
+        protected ProcessBuilder getProcessBuilder() {
+            ProcessBuilder processBuilder = new ProcessBuilder("./top_remote_client.sh",
+                    clientRegistration.host,
+                    username,
+                    password,
+                    Integer.toString(clientRegistration.localId),
+                    Integer.toString(clientRegistration.pid));
+            processBuilder.directory(new File("bin/"));
+            processBuilder.redirectErrorStream(true);
+            return processBuilder;
+        }
     }
 
     public static class ServerObserver implements Runnable {
@@ -307,10 +434,12 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
         private final Process queryProcess;
         private final String qid;
+        private final ClientRegistration clientRegistration;
 
-        public ResultObserver(Process queryProcess, String qid) {
+        public ResultObserver(Process queryProcess, String qid, ClientRegistration clientRegistration) {
             this.queryProcess = queryProcess;
             this.qid = qid;
+            this.clientRegistration = clientRegistration;
         }
 
         @Override
@@ -320,9 +449,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             try {
                 while ((result = reader.readLine()) != null) {
                     if (result.contains("$PID=")) {
-                        synchronized (clientPids) {
-                            clientPids.add(Integer.parseInt(result.substring("$PID=".length())));
-                        }
+                        clientRegistration.pid = Integer.parseInt(result.substring(result.indexOf("$PID=") + "$PID=".length()));
                     } else if (result.contains("$RESULT=")) {
                         Map<String, Long> latencies = Maps.newHashMap();
                         Map<String, String> data = new Gson().fromJson(result.substring("$RESULT=".length()), new TypeToken<Map<String, String>>(){}.getType());
@@ -367,5 +494,17 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public String toString() {
         return super.toString() + "_" + String.format("type=%s;interval=%s;caching=%s", type, interval, caching);
+    }
+
+    static class ClientRegistration {
+        private final String host;
+        private final int localId;
+        private int pid;
+
+        ClientRegistration(String host, int localId) {
+            this.host = host;
+            this.localId = localId;
+            this.pid = -1;
+        }
     }
 }

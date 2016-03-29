@@ -8,3 +8,6 @@ debug = false
 type = TODO:type
 interval = TODO:interval
 caching = TODO:caching
+client-pool = TODO:client-pool
+clients-username = remote-admin
+clients-password = remote-admin

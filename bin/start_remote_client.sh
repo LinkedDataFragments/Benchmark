@@ -2,9 +2,9 @@
 # Start a docker container with name "client"
 
 # Check for correct usage
-if [ $# -ne 9 ]; then
+if [ $# -ne 10 ]; then
     echo "Wrong usage" >&2
-    echo $0" [location] [username] [password] [debug] [type] [interval] [caching] [query] [target]" >&2
+    echo $0" [location] [username] [password] [debug] [type] [interval] [caching] [query] [target] [local-id]" >&2
     exit 1
 fi
 
@@ -17,10 +17,11 @@ interval=$6
 caching=$7
 query=$8
 target=$9
+localid=${10}
 
 # -oStrictHostKeyChecking=no   This always accepts server fingerprint
-sshpass -p "$password" ssh -t -t -oStrictHostKeyChecking=no $username@$location <<ENDSSH
-sudo docker run --name "client" \
+./retrying-sshpass.sh -p "$password" ssh -t -t -oStrictHostKeyChecking=no $username@$location <<ENDSSH
+sudo docker run --name "client-$localid" \
 -e "QUERY=$query" \
 -e "TARGET=$target" \
 -e "CACHING=$caching" \

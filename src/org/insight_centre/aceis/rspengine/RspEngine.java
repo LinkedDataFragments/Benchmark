@@ -164,7 +164,7 @@ public abstract class RspEngine {
         }
     }
 
-    static class ProcessStatter implements Runnable {
+    protected static class ProcessStatter implements Runnable {
 
         private final long pid;
         private Process process;
@@ -173,11 +173,24 @@ public abstract class RspEngine {
             this.pid = pid;
         }
 
-        @Override
-        public void run() {
+        protected ProcessBuilder getProcessBuilder() {
             ProcessBuilder processBuilder = new ProcessBuilder("./top_pid.sh", String.valueOf(pid));
             processBuilder.directory(new File("bin/"));
             processBuilder.redirectErrorStream(true);
+            return processBuilder;
+        }
+
+        public void onSuccess(ProcessStats stats) {
+            lastProcessStats.put(pid, stats);
+        }
+
+        public void onFail() {
+            nullProcessStats.add(pid);
+        }
+
+        @Override
+        public void run() {
+            ProcessBuilder processBuilder = getProcessBuilder();
             try {
                 this.process = processBuilder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -185,7 +198,7 @@ public abstract class RspEngine {
                 while ((line = reader.readLine()) != null) {
                     if(line.contains("Error")) {
                         System.err.println("Could not top " + pid);
-                        nullProcessStats.add(pid);
+                        onFail();
                     } else {
                         String[] split = line.split(" +");
                         int multiplier = 1;
@@ -194,11 +207,11 @@ public abstract class RspEngine {
                         if (split[2].contains("G")) multiplier = 1024 * 1024 * 1024;
                         ProcessStats stats = new ProcessStats(
                                 Double.parseDouble(split[1]), Integer.parseInt(split[2].replaceAll("[^0-9]*", "")) * multiplier);
-                        lastProcessStats.put(pid, stats);
+                        onSuccess(stats);
                     }
                 }
-            } catch (IOException e) {}
-            nullProcessStats.add(pid);
+            } catch (NumberFormatException | IOException e) {}
+            onFail();
         }
 
         public void stopProcess() {
