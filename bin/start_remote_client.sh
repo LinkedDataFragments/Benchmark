@@ -21,7 +21,7 @@ localid=${10}
 
 # -oStrictHostKeyChecking=no   This always accepts server fingerprint
 ./retrying-sshpass.sh -p "$password" ssh -t -t -oStrictHostKeyChecking=no $username@$location <<ENDSSH
-sudo docker run --name "client-$localid" \
+sudo docker run --net="host" --name "client-$localid" \
 -e "QUERY=$query" \
 -e "TARGET=$target" \
 -e "CACHING=$caching" \

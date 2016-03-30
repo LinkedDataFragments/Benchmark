@@ -2,7 +2,7 @@ tpfStreamingExec = TODO:tpfStreamingExec
 ldfServerPath = TODO:ldfServerPath
 ldfServerBin = bin/ldf-server
 insertPort = 4000
-target = http://localhost:3001/citybench
+target = http://server:3001/citybench
 
 debug = false
 type = TODO:type
