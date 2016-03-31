@@ -333,19 +333,29 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     @Override
     public long getClientMemoryUsage() {
         long total = 0;
+        int count = 0;
         for(ClientRegistration registration : getClientRegistrations()) {
             total += getRemoteProcessStats(registration).getMemory();
+            count++;
         }
-        return total;
+        if(total == 0) {
+            return 0;
+        }
+        return total / count;
     }
 
     @Override
     public double getClientCpu() {
         double total = 0;
+        int count = 0;
         for(ClientRegistration registration : getClientRegistrations()) {
             total += getRemoteProcessStats(registration).getCpu();
+            count++;
         }
-        return total;
+        if(total == 0) {
+            return 0;
+        }
+        return total / count;
     }
 
     protected ProcessStats getRemoteProcessStats(ClientRegistration clientRegistration) {
