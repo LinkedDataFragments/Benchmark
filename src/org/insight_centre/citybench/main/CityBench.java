@@ -49,6 +49,7 @@ public class CityBench {
 		queryCompletenessSelectivity.put("Q10_2", 1F);
 		queryCompletenessSelectivity.put("Q10_5", 1F);
 		queryCompletenessSelectivity.put("Q10_10", 1F);
+		queryCompletenessSelectivity.put("Q11", 1F);
 	}
 
 	// HashMap<String, String> parameters;
