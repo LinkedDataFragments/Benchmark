@@ -27,7 +27,7 @@ if [ "$(uname)" == "Darwin" ]; then
     top -pid $PID -stats pid,cpu,mem -d -l 0 -s 5 | gawk '{if($1 == '$PID'){ print;system(""); }}' &
     sub=$!
 else
-    top -p $PID -b -d 1 | gawk '{if($1 == '$PID'){ print $1 " " $9 " " $6 "K ";system(""); }}' &
+    top -p $PID -b -d 5 | gawk '{if($1 == '$PID'){ print $1 " " $9 " " $6 "K ";system(""); }}' &
     sub=$!
 fi
 
