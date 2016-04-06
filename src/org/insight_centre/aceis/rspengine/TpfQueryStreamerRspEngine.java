@@ -231,7 +231,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
                 processBuilder.redirectErrorStream(true);
             }
             Process queryProcess = processBuilder.start();
-            new Thread(new ResultObserver(queryProcess, qid, registration)).start();
+            new Thread(new ResultObserver(queryProcess, qid, registration, debug)).start();
 
             cityBench.registeredQueries.put(qid, queryProcess);
         } catch (IOException e) {
@@ -445,11 +445,13 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         private final Process queryProcess;
         private final String qid;
         private final ClientRegistration clientRegistration;
+        private final boolean debug;
 
-        public ResultObserver(Process queryProcess, String qid, ClientRegistration clientRegistration) {
+        public ResultObserver(Process queryProcess, String qid, ClientRegistration clientRegistration, boolean debug) {
             this.queryProcess = queryProcess;
             this.qid = qid;
             this.clientRegistration = clientRegistration;
+            this.debug = debug;
         }
 
         @Override
@@ -491,7 +493,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
                                 logger.debug("Query Streamer result discarded: " + result);
                             }
                         }
-                    } else {
+                    } else if(debug) {
                         System.err.println(result);
                     }
                 }
