@@ -44,10 +44,11 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
     private static Map<String, List<ClientRegistration>> clientPool = Maps.newHashMap();
     private String clientsUsername;
     private String clientsPassword;
+    private int workers;
 
     public static Set<String> capturedObIds = Collections.newSetFromMap(Maps.newConcurrentMap());
     public static Set<String> capturedResults = Collections.newSetFromMap(Maps.newConcurrentMap());
-    private static int serverPid = -1;
+    private static List<Integer> serverPids = Lists.newArrayList();
 
     private static final Map<ClientRegistration, ProcessStatter> remoteProcessStatters = Maps.newConcurrentMap();
     private static final Map<ClientRegistration, ProcessStats> lastRemoteProcessStats = Maps.newConcurrentMap();
@@ -81,6 +82,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         logger.info("Client pool: " + clientPool);
         clientsUsername = prop.getProperty("clients-username");
         clientsPassword = prop.getProperty("clients-password");
+        workers = Integer.parseInt(prop.getProperty("workers"));
 
         // Start the actual LDF server
         startLdfServer();
@@ -133,6 +135,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         env.put("INSERTPORT", Integer.toString(insertPort));
         env.put("TARGET", target);
         env.put("PROXYBINSFILE", "result_log/" + CityBench.getResultName() + "-proxybins.json");
+        env.put("WORKERS", Integer.toString(workers));
 
         // Start the proxy between our client and server
         try {
@@ -149,7 +152,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
         // Setup the LDF server with updating data
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder("node ldf-server-http-inserter config_citybench.json".split(" "));
+            ProcessBuilder processBuilder = new ProcessBuilder(("node ldf-server-http-inserter config_citybench.json 3000 " + workers).split(" "));
             processBuilder.directory(new File(tpfStreamingExec + "bin/"));
             if(debug) {
                 processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -302,12 +305,27 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
 
     @Override
     public long getServerMemoryUsage() {
-        return getProcessStats(serverPid).getMemory();
+        long total = 0;
+        for(int serverPid : serverPids) {
+            total += getProcessStats(serverPid).getMemory();
+        }
+        System.out.println("SERVER WORKER COUNT " + serverPids.size()); // TODO
+        if(total == 0) {
+            return 0;
+        }
+        return total;
     }
 
     @Override
     public double getServerCpu() {
-        return getProcessStats(serverPid).getCpu();
+        long total = 0;
+        for(int serverPid : serverPids) {
+            total += getProcessStats(serverPid).getCpu();
+        }
+        if(total == 0) {
+            return 0;
+        }
+        return total;
     }
 
     protected List<ClientRegistration> getClientRegistrations() {
@@ -429,7 +447,7 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
             try {
                 while ((result = reader.readLine()) != null) {
                     if (result.contains("$PID=")) {
-                        serverPid = Integer.parseInt(result.substring("$PID=".length()));
+                        serverPids.add(Integer.parseInt(result.substring("$PID=".length())));
                     } else if(debug) {
                         System.out.println(result);
                     }

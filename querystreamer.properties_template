@@ -11,3 +11,4 @@ caching = TODO:caching
 client-pool = TODO:client-pool
 clients-username = remote-admin
 clients-password = remote-admin
+workers = 8
