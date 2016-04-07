@@ -309,7 +309,6 @@ public class TpfQueryStreamerRspEngine extends RspEngine {
         for(int serverPid : serverPids) {
             total += getProcessStats(serverPid).getMemory();
         }
-        System.out.println("SERVER WORKER COUNT " + serverPids.size()); // TODO
         if(total == 0) {
             return 0;
         }
