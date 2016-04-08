@@ -5,6 +5,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -12,6 +13,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -30,6 +32,32 @@ public class QueryStreamerEndpoint {
 
     public QueryStreamerEndpoint(int insertPort) {
         this.insertPort = insertPort;
+    }
+
+    /**
+     * Clears the cache in front of the TPF server.
+     * Will give a warning if it can not be found.
+     */
+    protected void clearCache() {
+        File dir = new File("/home/citybench/tmp-cache");
+        if(!dir.exists() || !dir.isDirectory()) {
+            System.err.println("Could not find the cache directory: " + dir.getPath());
+        } else {
+            File[] files = dir.listFiles();
+            if(files != null) {
+                for (File file : files) {
+                    if(file.isDirectory()) {
+                        try {
+                            FileUtils.deleteDirectory(file);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -70,6 +98,7 @@ public class QueryStreamerEndpoint {
                 e.printStackTrace();
             }
         }
+        clearCache();
     }
 
     protected String getUrl(long timeInitial, long timeFinal, String streamId) {
