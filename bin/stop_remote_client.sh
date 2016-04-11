@@ -16,6 +16,7 @@ localid=$4
 # -oStrictHostKeyChecking=no   This always accepts server fingerprint
 ./retrying-sshpass.sh -p "$password" ssh -t -t -oStrictHostKeyChecking=no $username@$location <<ENDSSH
 sudo docker stop client-$localid
+sudo docker rm client-$localid
 exit
 ENDSSH
 
