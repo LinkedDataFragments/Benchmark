@@ -32,6 +32,7 @@ public class QueryStreamerEndpoint {
 
     public QueryStreamerEndpoint(int insertPort) {
         this.insertPort = insertPort;
+        clearCache();
     }
 
     /**
