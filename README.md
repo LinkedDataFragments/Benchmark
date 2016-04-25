@@ -1,10 +1,13 @@
 # Benchmark
-CityBench is a java-based benchmarking toolset for RSP engines, currently CQELS and C-SPARQL are supported.
+This is a variant of the CityBench benchmark framework that is supposed to be ran in a distributed environment on Amazon.
+More information on how to setup this environment: https://github.com/LinkedDataFragments/CityBench-Amazon
+
+CityBench is a java-based benchmarking toolset for RSP engines, currently CQELS, C-SPARQL and TPQ Query Streamer are supported.
 
 ##Prerequisite
 * JVM 1.7
-* Webserver of your choice (JBoss,Tomcat etc.)
 * Java IDE (for debugging and extensions)
+* TPF Query Streamer (https://github.com/LinkedDataFragments/QueryStreamer.js)
 
 ##Folders & Files
 1. *cqels_query*: sample queries in CQELS syntax;
@@ -17,6 +20,7 @@ CityBench is a java-based benchmarking toolset for RSP engines, currently CQELS 
 7. *streams*: sensor observation raw data in .csv formats, used to generate RDF streams；
 8. *EC-log*: logger file output;
 9. *citybench.properties*: configuration file loaded by CityBench.
+10. *querystreamer_query*: sample queries in SPARQL syntax to be handled by TPF Query Streamer;
 
 ##To run
 1. Download all resources and source code
@@ -29,6 +33,7 @@ CityBench is a java-based benchmarking toolset for RSP engines, currently CQELS 
 * streams = [your_streams_folder] // tell CityBench where to look for raw data to simulate sensor streams.
 * cqels_query = [your_cqels_queries_folder] // tell CityBench where to look for cqels queries.
 * csparql_query = [your_csparql_queries_folder] // tell CityBench where to look for csparql queries.
+* querystreamer_query = [your_querysreamer_queries_folder] // Tell CityBench where to look for querstreamer queries
 
 // All paths are relative path to the project root
 
@@ -42,7 +47,11 @@ Acceptable params:
 * startDate = (date in the format of "yyyy-MM-dd'T'HH:mm:ss")a, // start time of the sensor observations used
 * endDate = b,  // ending time of the sensor observations used
 * frequency = (double)c.  // fixed frequency for sensors, only has effects when rate=1.0
-* engine = "cqels" or "csparql" // engine to test
-* query = (String) q // file names of the queries to run (under cqels_query or csparql_query), separate with ","
+* engine = "cqels", "csparql" or "querystreamer" // engine to test
+* query = (String) q // file names of the queries to run (under cqels_query, csparql_query or querystreamer_query), separate with ","
 
 engine, start and end dates are  mandatory.
+
+In order to manually run the TPF Query Streamer, the file `querystreamer.properties_template`
+needs to be copied to `querystreamer.properties` and filled in.
+
